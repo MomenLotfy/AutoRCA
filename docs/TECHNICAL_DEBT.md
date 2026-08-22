@@ -2,6 +2,18 @@
 
 كل نقطة هنا اتسجلت وقت اتخاذ القرار في التصميم، مش بأثر رجعي.
 
+## Phase 1 — LLM Explanation Boundary
+
+تمت إضافة `llm/` كطبقة منفصلة بمزود OpenAI-compatible بسيط عبر HTTP القياسي.
+الطبقة تستقبل `RCARequest` فقط، تتحقق من RCARequest قبل الإرسال، تطلب JSON
+منظمًا، تتحقق من `final_rca.schema.json`، ثم تمرر النتيجة إلى
+`FinalRCAValidator`. الـ CLI لا يستخدم هذا المسار إلا مع `--llm`، وغياب
+`AUTORCA_LLM_API_KEY` أو `AUTORCA_LLM_MODEL` يفشل بوضوح بلا نتيجة بديلة.
+
+التصميم الحالي لا ينفذ إعادة المحاولة أو streaming أو اختيار مزود تلقائي.
+إضافة مزود آخر مستقبلًا يجب أن تنفذ واجهة `LLMClient` دون تعديل
+`AnalysisPipeline` أو محرك القرار.
+
 ## TD-001 — Corroboration بدون Deduplication
 `RuleEngine._accumulate_scores` بيدي وزن تعزيز لكل Evidence إضافية بعد
 أول دليل للفرضية، من غير تحقق إن الأدلة دي مستقلة فعليًا أو مجرد تكرار

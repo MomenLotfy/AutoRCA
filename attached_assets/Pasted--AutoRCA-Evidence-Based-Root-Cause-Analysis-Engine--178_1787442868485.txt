@@ -1,0 +1,710 @@
+أنت تعمل الآن على مشروع AutoRCA — Evidence-Based Root Cause Analysis Engine.
+
+مهم جدًا:
+لا تبدأ بإعادة تصميم المشروع، ولا تعيد كتابة الـ Core، ولا تغيّر الـ deterministic reasoning architecture الحالية لمجرد تحسينها.
+
+الحالة الحالية المستقرة:
+- Real Git Collector
+- Real File Collector
+- Real CLI
+- Deterministic Pipeline
+- RulesConfig
+- RuleEngine
+- ScoringEngine
+- EvidenceBuilder
+- RCARequestBuilder
+- FinalRCAValidator
+- JSON Schema validation
+- Real Git repository + real traceback execution
+- 57 tests passing
+- Current stable milestone: v1.4.0-alpha
+
+المبدأ الأساسي للمشروع:
+LLM DOES NOT DECIDE THE ROOT CAUSE.
+
+القرار يتم بالكامل بشكل deterministic:
+
+Raw Inputs
+→ Observations
+→ Evidence
+→ Rule Engine
+→ Hypotheses
+→ Selected Root Cause
+
+ثم فقط بعد اتخاذ القرار:
+
+Selected Root Cause
+→ RCARequestBuilder
+→ Structured RCARequest
+→ LLM
+→ FinalRCA
+→ FinalRCAValidator
+→ Final Report
+
+الهدف من هذه المرحلة هو تنفيذ 3 مراحل فقط وبشكل incremental:
+
+==================================================
+PHASE 1 — REAL LLM INTEGRATION
+==================================================
+
+نريد تحويل الـ flow الحالي إلى:
+
+PipelineResult
+      ↓
+RCARequestBuilder
+      ↓
+Structured RCARequest
+      ↓
+LLM
+      ↓
+FinalRCA
+      ↓
+FinalRCAValidator
+      ↓
+Final User-Facing Result
+
+### القاعدة الأهم
+
+الـ LLM ممنوع تمامًا أن يستقبل raw logs أو raw traceback أو raw git diff بهدف اكتشاف Root Cause.
+
+الـ LLM يجب أن يستقبل فقط RCARequest الذي بناه RCARequestBuilder.
+
+يعني:
+
+❌ ممنوع:
+
+Raw traceback → LLM → Root Cause
+
+❌ ممنوع:
+
+Git diff → LLM → Root Cause
+
+❌ ممنوع:
+
+Raw logs + prompt → LLM → Root Cause
+
+المسموح:
+
+Deterministic Engine
+→ Selected Hypothesis
+→ RCARequest
+→ LLM
+→ Explanation / Fix
+
+الـ LLM دوره:
+1. شرح Root Cause بلغة مفهومة.
+2. شرح الأدلة الموجودة في RCARequest.
+3. اقتراح Fix مناسب.
+4. يمكنه اقتراح خطوات remediation.
+5. لا يستطيع تغيير hypothesis_id.
+6. لا يستطيع تغيير confidence.
+7. لا يستطيع تغيير cited_evidence_ids.
+8. لا يستطيع تغيير resolved_severity.
+9. لا يستطيع اختراع Evidence جديدة.
+10. لا يستطيع اختيار Root Cause مختلفة.
+
+FinalRCAValidator هو آخر بوابة قبل قبول مخرجات الـ LLM.
+
+--------------------------------------------------
+1. Inspect before modifying
+--------------------------------------------------
+
+قبل كتابة أي كود:
+
+- اقرأ structure المشروع بالكامل.
+- راجع:
+  pipeline.py
+  rca_request/rca_request_builder.py
+  engine/rule_engine.py
+  engine/scoring_engine.py
+  evidence/evidence_builder.py
+  config/rules_config.py
+  validation/final_rca_validator.py
+  schemas/*.json
+  tests/
+  cli/
+  reporting/
+  README.md
+  docs/TECHNICAL_DEBT.md
+  requirements.txt
+
+- افهم الـ existing RCARequest schema.
+- افهم FinalRCA schema.
+- افهم FinalRCAValidator الحالي.
+- افهم كيف يتم إنشاء PipelineResult.
+- افهم كيف يتم اختيار hypothesis.
+- افهم كيف يتم تمرير resolved_severity وconfidence.
+- لا تفترض APIs غير موجودة.
+
+بعد المراجعة، نفذ التعديلات المطلوبة فقط.
+
+--------------------------------------------------
+2. LLM Provider abstraction
+--------------------------------------------------
+
+لا تربط الـ Core مباشرة بمزود LLM واحد.
+
+أنشئ abstraction بسيط مثل:
+
+LLMClient
+
+بواجهة واضحة، مثل:
+
+generate(request: RCARequest) -> FinalRCA
+
+أو equivalent مناسب للـ architecture الحالية.
+
+الهدف:
+
+Core
+   ↓
+LLMClient interface
+   ↓
+Provider implementation
+
+بحيث يمكن لاحقًا استخدام:
+- OpenAI
+- Anthropic
+- Gemini
+- Local model
+
+بدون تعديل الـ deterministic Core.
+
+لا تضف abstraction مبالغ فيه.
+
+نريد أبسط تصميم production-friendly.
+
+--------------------------------------------------
+3. Structured LLM output
+--------------------------------------------------
+
+الـ LLM يجب أن يرجع structured output مطابقًا لـ FinalRCA schema.
+
+لا تعتمد على plain text parsing إذا كان من الممكن استخدام structured JSON output.
+
+الـ response يجب أن يتم parsing + validation قبل تمريره للـ FinalRCAValidator.
+
+إذا كانت مكتبة الـ LLM المستخدمة لا تدعم structured output بشكل مباشر، استخدم JSON response + schema validation مع Fail Fast.
+
+ممنوع قبول malformed output.
+
+--------------------------------------------------
+4. Prompt design
+--------------------------------------------------
+
+اكتب system prompt واضح للـ LLM يشرح:
+
+"You are the explanation layer of AutoRCA."
+
+ووضح:
+
+- Root Cause has already been determined by a deterministic rule engine.
+- You MUST NOT determine a different root cause.
+- You MUST NOT invent evidence.
+- You MUST use only the supplied RCARequest.
+- You MUST preserve hypothesis_id.
+- You MUST preserve confidence.
+- You MUST preserve cited_evidence_ids.
+- You MUST preserve resolved_severity.
+- Your role is explanation and remediation guidance only.
+
+الـ prompt يجب أن يعكس فلسفة AutoRCA:
+
+Deterministic Reasoning
+≠
+Generative Explanation
+
+--------------------------------------------------
+5. Configuration / secrets
+--------------------------------------------------
+
+ممنوع hardcode لأي API key.
+
+استخدم environment variables.
+
+مثال:
+
+AUTORCA_LLM_PROVIDER
+AUTORCA_LLM_MODEL
+AUTORCA_LLM_API_KEY
+
+لكن لا تفرض أسماء معينة إذا كانت architecture الحالية تستخدم naming convention مختلف.
+
+راجع المشروع أولًا.
+
+أضف `.env.example` فقط إذا كان مناسبًا.
+
+لا تضع secret حقيقي في repository.
+
+--------------------------------------------------
+6. Offline / deterministic testing
+--------------------------------------------------
+
+الاختبارات الحالية يجب ألا تعتمد على internet أو API حقيقي.
+
+أنشئ Mock/Fake LLM client للاختبارات.
+
+مثال:
+
+FakeLLMClient
+
+يرجع FinalRCA deterministic معروف.
+
+وبالتالي:
+
+pytest tests/
+
+يجب أن يعمل بدون:
+- API key
+- Internet
+- external LLM
+- Docker
+- GitHub authentication
+
+أضف tests للتأكد من:
+
+1. RCARequest يتم بناؤه من PipelineResult.
+2. LLM receives RCARequest only.
+3. LLM لا يستقبل raw traceback.
+4. LLM لا يستقبل raw git diff.
+5. FinalRCA يتم parsing له.
+6. FinalRCAValidator يقبل output صحيح.
+7. Validator يرفض hypothesis_id مختلف.
+8. Validator يرفض confidence مختلف.
+9. Validator يرفض evidence IDs غير موجودة.
+10. Validator يرفض severity مختلفة.
+11. Validator يرفض malformed output.
+12. LLM failure يتم التعامل معه بشكل واضح.
+
+لا تكسر الاختبارات الحالية.
+
+--------------------------------------------------
+PHASE 2 — REAL DEMO UI
+==================================================
+
+بعد الانتهاء من LLM integration واختبارها، أضف واجهة Demo بسيطة.
+
+لا تعيد تصميم الـ Core.
+
+الواجهة مجرد presentation layer فوق الـ existing pipeline.
+
+الهدف:
+
+CLI / UI
+   ↓
+AnalysisPipeline
+   ↓
+RCARequest
+   ↓
+LLM
+   ↓
+FinalRCA
+   ↓
+Validator
+   ↓
+UI
+
+الواجهة المطلوبة يجب أن تعرض شيئًا قريبًا من:
+
+┌──────────────────────────────────────────────┐
+│                 AutoRCA                      │
+│      Evidence-Based Root Cause Analysis      │
+├──────────────────────────────────────────────┤
+│ Incident: b9bc2b5                             │
+│ Environment: Production                      │
+│                                              │
+│ 🔴 Root Cause                                │
+│ Missing Environment Variable                 │
+│                                              │
+│ Confidence                                   │
+│ ██████████████████░░ 90%                     │
+│                                              │
+│ Evidence                                     │
+│ ✓ PORT removed from .env                     │
+│ ✓ KeyError: PORT                             │
+│                                              │
+│ Severity: CRITICAL                           │
+│                                              │
+│ AI Explanation                               │
+│ The deployment removed the PORT environment  │
+│ variable required by the application...      │
+│                                              │
+│ Recommended Fix                              │
+│ Restore PORT=8000 and redeploy the service.  │
+└──────────────────────────────────────────────┘
+
+### UI requirements
+
+يجب أن تعرض على الأقل:
+
+- Incident ID
+- Environment
+- Root Cause
+- Confidence
+- Severity
+- Supporting Evidence
+- Related Change / commit
+- AI Explanation
+- Recommended Fix
+
+ويجب أن يكون واضح بصريًا أن:
+
+Root Cause + Confidence + Evidence + Severity
+
+تم تحديدهم بواسطة deterministic engine.
+
+بينما:
+
+Explanation + Recommended Fix
+
+تم توليدهم بواسطة AI.
+
+استخدم labels واضحة مثل:
+
+DETERMINISTIC RESULT
+
+و:
+
+AI-GENERATED EXPLANATION
+
+حتى لا يحدث أي confusion أمام لجنة التحكيم.
+
+### Technology
+
+اختر أبسط UI technology متوافقة مع المشروع الحالي.
+
+لا تضف frontend framework ضخم إذا لم يكن مطلوبًا.
+
+لو Streamlit أو FastAPI + simple HTML مناسب، استخدم الأبسط.
+
+لا تحول المشروع إلى SaaS كامل.
+
+الهدف Hackathon Demo وليس production dashboard كامل.
+
+--------------------------------------------------
+PHASE 3 — THREE REAL INCIDENT SCENARIOS
+==================================================
+
+نريد إثبات أن AutoRCA لا يعمل على scenario واحد فقط.
+
+نريد 3 سيناريوهات حقيقية:
+
+1. Missing Environment Variable
+2. Missing Dependency
+3. Port Conflict
+
+مهم جدًا:
+
+هذه ليست strings ثابتة داخل demo_run.py.
+
+كل سيناريو يجب أن يستخدم real input قدر الإمكان.
+
+### Scenario 1 — Missing Environment Variable
+
+استخدم نفس الـ real Git repository / real commit / real Python traceback الحالي.
+
+المطلوب:
+
+Real Git diff
++
+Real application traceback
+→
+Missing Environment Variable
+→
+90% confidence
+
+يجب أن تظل النتيجة الحالية تعمل.
+
+--------------------------------------------------
+Scenario 2 — Missing Dependency
+--------------------------------------------------
+
+أنشئ repo تجريبي حقيقي.
+
+مثال:
+
+app.py يستورد package غير مثبتة:
+
+import nonexistent_package
+
+ثم شغل:
+
+python3 app.py
+
+وسجل الـ real traceback:
+
+ModuleNotFoundError
+
+استخدم هذا كـ real input.
+
+إذا كان التصميم الحالي يتطلب dependency evidence من source معين، استخدم collector مناسب بدل اختراع input داخل الـ engine.
+
+المطلوب أن يصل deterministic engine إلى:
+
+Missing Dependency
+
+ثم RCARequest
+
+ثم LLM explanation
+
+ثم FinalRCAValidator
+
+ثم report.
+
+لا تضف rule جديدة إلا إذا كانت موجودة في taxonomy/rules architecture أو كانت إضافة ضرورية ومتوافقة مع التصميم الحالي.
+
+إذا كانت rule غير موجودة أصلًا، توقف وأبلغني قبل توسيع الـ Core.
+
+--------------------------------------------------
+Scenario 3 — Port Conflict
+--------------------------------------------------
+
+أنشئ scenario حقيقي قدر الإمكان.
+
+مثلاً تطبيق يحاول bind إلى port مستخدم بالفعل.
+
+يمكن استخدام Python socket/server أو Docker إذا كان collector الحالي يدعم ذلك.
+
+المطلوب استخراج real error مثل:
+
+Address already in use
+
+ثم:
+
+Observation
+→ Evidence
+→ Rule Engine
+→ Port Conflict
+→ RCARequest
+→ LLM
+→ FinalRCA
+→ Validator
+
+مرة أخرى:
+
+لا تغير architecture الحالية.
+
+--------------------------------------------------
+IMPORTANT — DO NOT FAKE "REAL"
+--------------------------------------------------
+
+لا تكتب:
+
+traceback_text = """..."""
+
+داخل demo على أنه real incident.
+
+ولا تكتب:
+
+git_diff_text = """..."""
+
+وتقول إنه real Git diff.
+
+الـ demo يجب أن يأخذ البيانات من:
+- real subprocess execution
+- real Git repository
+- real files
+- existing collectors
+
+إذا اضطررنا لمحاكاة مصدر غير متاح، اذكر ذلك بوضوح في documentation.
+
+--------------------------------------------------
+TESTING REQUIREMENTS
+--------------------------------------------------
+
+قبل أي تغيير:
+
+شغّل:
+
+pytest tests/ -v
+
+وسجل baseline.
+
+بعد كل Phase:
+
+pytest tests/ -v
+
+يجب ألا يتم حذف أو تعطيل أي اختبار موجود فقط لجعل suite خضراء.
+
+أضف regression tests لكل behavior جديد.
+
+الاختبارات يجب أن تثبت:
+
+1. Existing 57 tests remain passing.
+2. LLM integration tests.
+3. Validator integration.
+4. UI smoke test إذا كان مناسبًا.
+5. Real collector integration tests.
+6. Scenario tests.
+
+في النهاية أعطني العدد النهائي للاختبارات.
+
+--------------------------------------------------
+IMPORTANT — CORE FREEZE
+--------------------------------------------------
+
+اعتبر هذه الملفات Core حساسة:
+
+pipeline.py
+engine/
+evidence/
+extractors/
+config/rules_config.py
+models/
+schemas/
+validation/
+
+لا تعدلها إلا إذا كان التعديل ضروريًا فعلًا للتكامل.
+
+الأولوية:
+
+Existing deterministic behavior
+> New features
+
+إذا ظهر bug في الـ Core أثناء التنفيذ:
+
+1. لا تخفيه.
+2. لا تتجاوزه.
+3. اكتب السبب.
+4. أضف regression test.
+5. أصلحه بأقل تغيير ممكن.
+6. أبلغني بما حدث.
+
+نحن بالفعل اكتشفنا bugs حقيقية سابقًا بسبب تشغيل الـ system فعليًا، لذلك التشغيل الحقيقي أهم من مجرد نجاح الـ unit tests.
+
+--------------------------------------------------
+SECURITY REQUIREMENTS
+--------------------------------------------------
+
+تأكد من:
+
+- لا secrets في Git.
+- لا API keys في code.
+- لا raw logs يتم إرسالها للـ LLM خارج RCARequest.
+- لا stack traces كاملة يتم إرسالها إلا إذا كانت موجودة بشكل مقصود داخل RCARequest وفق الـ schema والـ limits الحالية.
+- احترام rca_request_limits الموجودة في rules.config.json.
+- لا LLM-generated value يستطيع تغيير deterministic decision.
+- FinalRCAValidator هو gate قبل قبول النتيجة النهائية.
+
+--------------------------------------------------
+DOCUMENTATION
+--------------------------------------------------
+
+حدث:
+
+README.md
+
+docs/TECHNICAL_DEBT.md
+
+أضف documentation واضحة للـ architecture الجديدة:
+
+Deterministic Core
+        ↓
+RCARequest
+        ↓
+LLM Explanation Layer
+        ↓
+FinalRCA
+        ↓
+Validator
+        ↓
+User
+
+وضح أيضًا:
+
+WHAT IS DETERMINISTIC?
+
+- Collectors
+- Extractors
+- Evidence
+- Rule Engine
+- Scoring
+- Root Cause selection
+- Severity
+- Evidence IDs
+
+WHAT IS AI?
+
+- Explanation
+- Remediation guidance
+- Human-readable summary
+
+وضح أن LLM لا يختار Root Cause.
+
+أضف طريقة التشغيل الحقيقية.
+
+مثلاً:
+
+1. install
+2. configure LLM
+3. run CLI
+4. launch UI
+5. analyze real incident
+
+--------------------------------------------------
+GIT / VERSIONING
+--------------------------------------------------
+
+لا تحذف tags الحالية.
+
+الحالة الحالية:
+
+v1.0.0-alpha
+v1.1.0-alpha
+v1.2.0-alpha
+v1.3.0-alpha
+v1.4.0-alpha
+
+بعد اكتمال كل milestone اعمل commit واضح.
+
+لا تعمل tag جديد إلا بعد أن تنتهي كل الاختبارات وتبلغني بالنتيجة.
+
+--------------------------------------------------
+FINAL REPORT
+--------------------------------------------------
+
+في النهاية لا تقل فقط "Done".
+
+أعطني تقريرًا واضحًا يحتوي:
+
+1. What was changed.
+2. Files added.
+3. Files modified.
+4. Architecture flow.
+5. LLM provider implementation.
+6. How LLM isolation is enforced.
+7. How FinalRCAValidator protects deterministic decisions.
+8. UI technology and structure.
+9. Three real scenarios and their results.
+10. Test count before/after.
+11. Any bugs discovered.
+12. Any Core changes.
+13. Any remaining Technical Debt.
+14. Exact commands to run the complete demo.
+15. What is still NOT implemented.
+
+مهم جدًا:
+إذا وجدت أي requirement غير واضح أو يحتاج تغييرًا في الـ Core architecture، لا تفترض الحل من نفسك. أوقف هذه النقطة واذكر المشكلة والخيارات بدل تنفيذ redesign كبير.
+
+الهدف النهائي:
+
+AutoRCA يجب أن يصبح Demo حقيقي قابل للعرض أمام لجنة DevOps:
+
+Real Incident
+    ↓
+Real Evidence
+    ↓
+Deterministic Root Cause
+    ↓
+Structured RCARequest
+    ↓
+LLM Explanation
+    ↓
+FinalRCA Validation
+    ↓
+Professional UI
+
+مع الحفاظ على الفكرة الأساسية:
+
+"AI explains the decision.
+AI does not make the decision."

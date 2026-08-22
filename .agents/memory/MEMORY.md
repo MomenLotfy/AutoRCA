@@ -1,0 +1,1 @@
+- [Git fixture environment](git-fixture-environment.md) — system Git excludes `.env`; real-Git tests need system config isolation.

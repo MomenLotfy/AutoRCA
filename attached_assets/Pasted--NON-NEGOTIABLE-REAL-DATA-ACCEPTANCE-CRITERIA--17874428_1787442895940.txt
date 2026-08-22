@@ -1,0 +1,317 @@
+==================================================
+NON-NEGOTIABLE REAL-DATA ACCEPTANCE CRITERIA
+==================================================
+
+هذه الشروط إلزامية وليست اقتراحات.
+
+لا تعتبر المهمة مكتملة إلا إذا تحققت جميع الشروط التالية:
+
+1. NO DEMO DATA IN THE REAL EXECUTION PATH
+
+ممنوع استخدام أي hardcoded incident data في execution path الحقيقي.
+
+ممنوع وجود شيء مثل:
+
+traceback_text = """..."""
+git_diff_text = """..."""
+evidence = [...]
+hypothesis = {...}
+confidence = 0.90
+
+كمصدر للبيانات في التطبيق الحقيقي.
+
+أي بيانات تستخدم في الاختبارات فقط يجب أن تكون داخل tests/ أو fixtures/
+ومعلّمة بوضوح كـ test fixtures.
+
+الـ production/demo execution path يجب أن يحصل على البيانات من:
+- Real Git repository
+- Real Git commits/diffs
+- Real files
+- Real command execution
+- Real collectors
+- Real Pipeline
+
+وليس من strings مكتوبة داخل Python code.
+
+--------------------------------------------------
+2. NO FAKE LLM IN REAL EXECUTION
+--------------------------------------------------
+
+FakeLLMClient مسموح به في tests فقط.
+
+ممنوع استخدام FakeLLMClient أو hardcoded FinalRCA في الـ real demo.
+
+الـ real demo يجب أن يستخدم LLM provider حقيقي عبر API/configuration.
+
+إذا لم توجد API credentials:
+- لا تستخدم fake response.
+- لا تخترع نتيجة.
+- أظهر خطأ واضحًا بأن LLM credentials غير مهيأة.
+
+--------------------------------------------------
+3. REAL END-TO-END EXECUTION
+--------------------------------------------------
+
+يجب تنفيذ End-to-End test حقيقي:
+
+Real Incident
+→ Real Collector
+→ Real Extractor
+→ Real Observation
+→ Real Evidence
+→ Real Rule Engine
+→ Real Hypothesis
+→ Real RCARequest
+→ Real LLM
+→ Real FinalRCA
+→ Real FinalRCAValidator
+→ Real UI/Report
+
+لا تستخدم mock أو hardcoded data في هذا المسار.
+
+--------------------------------------------------
+4. THREE REAL INCIDENTS
+--------------------------------------------------
+
+يجب إثبات التشغيل الحقيقي على ثلاثة سيناريوهات:
+
+A. Missing Environment Variable
+
+- real Python application
+- real runtime failure
+- real traceback
+- real Git repository
+- real Git commit removing PORT
+- real Git diff
+- AutoRCA must detect Missing Environment Variable
+
+B. Missing Dependency
+
+- real Python application
+- import of an actually unavailable dependency
+- execute the application
+- capture the real ModuleNotFoundError traceback
+- feed the real traceback through the actual collector/pipeline
+- AutoRCA must detect Missing Dependency
+
+C. Port Conflict
+
+- start a real server/process on a real port
+- start another process attempting to use the same port
+- capture the real "Address already in use" failure
+- feed the real output through the actual collector/pipeline
+- AutoRCA must detect Port Conflict
+
+If any of these scenarios cannot be implemented using the current
+architecture, DO NOT fake the result.
+
+Instead:
+1. report exactly what is missing,
+2. explain why,
+3. add the required implementation only if it does not violate the Core Freeze.
+
+--------------------------------------------------
+5. REAL GIT PROOF
+--------------------------------------------------
+
+For at least one complete scenario, demonstrate:
+
+git repository
+→ real commit
+→ real change
+→ real git diff
+→ AutoRCA
+
+The final report must include the real commit SHA generated during execution.
+
+Do not hardcode the SHA.
+
+--------------------------------------------------
+6. REAL TRACEBACK PROOF
+--------------------------------------------------
+
+At least one incident must generate its traceback by actually executing
+the failing application.
+
+Do not create the traceback manually as a string.
+
+The final report must show:
+- command executed
+- real generated error
+- file used as input
+- AutoRCA result
+
+--------------------------------------------------
+7. SOURCE-OF-TRUTH CHECK
+--------------------------------------------------
+
+Before considering the implementation complete, search the repository for
+possible fake/demo execution paths.
+
+Check for:
+
+- hardcoded traceback strings
+- hardcoded git diffs
+- hardcoded confidence values
+- hardcoded root causes
+- hardcoded evidence
+- hardcoded FinalRCA responses
+- FakeLLMClient usage outside tests
+- demo fixtures imported by production code
+
+Use repository search tools and report the results.
+
+If any such item exists in the real execution path, fix it or explicitly
+report it.
+
+--------------------------------------------------
+8. TESTS MUST NOT HIDE PROBLEMS
+--------------------------------------------------
+
+Do not modify/delete tests just to make them pass.
+
+Do not weaken assertions.
+
+Do not skip integration tests.
+
+Do not mock the component being tested if the purpose of the test is to
+prove real integration.
+
+Unit tests may use mocks/fakes where appropriate.
+
+Integration/E2E tests must exercise the real implementation.
+
+--------------------------------------------------
+9. REAL DEMO COMMAND
+--------------------------------------------------
+
+Provide ONE documented command that starts the real application/demo.
+
+Example:
+
+python3 -m cli.main analyze \
+  --repo /real/repository \
+  --environment production \
+  --traceback /real/traceback.txt
+
+or the new UI equivalent.
+
+The command must execute the actual pipeline.
+
+Do not create a special "demo mode" that bypasses the real pipeline.
+
+--------------------------------------------------
+10. UI MUST DISPLAY REAL RESULTS
+--------------------------------------------------
+
+The UI must not contain hardcoded:
+
+Root Cause
+Confidence
+Severity
+Evidence
+Commit SHA
+AI Explanation
+
+These values must come from the actual analysis result.
+
+For example:
+
+UI
+↓
+API
+↓
+Pipeline
+↓
+RCARequest
+↓
+Real LLM
+↓
+FinalRCAValidator
+↓
+UI
+
+not:
+
+UI
+↓
+hardcoded example result
+
+--------------------------------------------------
+11. FAIL FAST
+--------------------------------------------------
+
+If required real input is missing:
+
+- Git repository missing → fail clearly
+- traceback missing → fail clearly when required
+- LLM API key missing → fail clearly
+- invalid configuration → fail clearly
+- invalid LLM response → fail clearly
+
+NEVER silently fall back to fake/demo data.
+
+NEVER silently return a predefined result.
+
+--------------------------------------------------
+12. FINAL PROOF BEFORE "DONE"
+--------------------------------------------------
+
+Before saying "implementation complete", actually execute:
+
+A. Full test suite
+
+pytest tests/ -v
+
+B. Real Missing Environment Variable scenario
+
+C. Real Missing Dependency scenario
+
+D. Real Port Conflict scenario
+
+E. Real LLM integration
+
+F. Real UI flow
+
+Then report:
+
+- exact commands executed
+- actual outputs/results
+- number of tests passed
+- which data came from real sources
+- which components, if any, used mocks
+- which components, if any, remain simulated
+- remaining Technical Debt
+
+If any requirement above was not actually executed, DO NOT claim
+the project is fully working.
+
+Use the exact wording:
+
+"NOT VERIFIED"
+
+for anything that was not actually tested.
+
+==================================================
+MOST IMPORTANT RULE
+==================================================
+
+Never optimize for making the demo look successful.
+
+Optimize for proving that the system actually works.
+
+A failed real integration test is better than a fake successful demo.
+
+AutoRCA's credibility depends on this principle:
+
+REAL INPUT
+→ REAL EVIDENCE
+→ DETERMINISTIC DECISION
+→ REAL LLM EXPLANATION
+→ VALIDATED FINAL RCA
+
+No hidden demo data.
+No hardcoded incident results.
+No fake confidence.
+No fake root cause.
+No fake LLM response in the real execution path.

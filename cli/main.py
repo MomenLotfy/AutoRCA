@@ -24,13 +24,16 @@ cli/main.py
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from collectors.file_collector import FileCollector, FileCollectorError
 from collectors.git_collector import GitCollector, GitCollectorError
 from pipeline import AnalysisPipeline, PipelineInput
+from rca_request.rca_request_builder import RCARequestBuilder, RepositoryContext
 from reporting.incident_report_renderer import IncidentReportRenderer
+from llm import LLMAnalysisService, LLMClientError, OpenAICompatibleLLMClient
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RULES_CONFIG = PROJECT_ROOT / "rules" / "rules.config.json"
@@ -54,6 +57,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--ci-log", default=None, help="Path to a real CI log file.")
     analyze.add_argument("--full-name", default=None, help="Repository full name, e.g. org/repo.")
     analyze.add_argument("--no-diff", action="store_true", help="Skip collecting a git diff entirely.")
+    analyze.add_argument(
+        "--llm",
+        action="store_true",
+        help="Generate and validate a real LLM explanation; requires LLM environment variables.",
+    )
 
     return parser
 
@@ -111,6 +119,47 @@ def run_analyze(args: argparse.Namespace) -> int:
     )
     analysis_id = f"AR{_timestamp_id()}"
     result = pipeline.run(PipelineInput(analysis_id=analysis_id, sources=sources))
+
+    if args.llm:
+        if result.selected is None:
+            print("[error] No root cause identified; LLM was not called.", file=sys.stderr)
+            return 2
+        try:
+            builder = RCARequestBuilder(
+                rule_engine=pipeline._rule_engine,
+                scoring_engine=pipeline._scoring_engine,
+                taxonomy_index=pipeline._taxonomy_index,
+                rules_config=pipeline._rules_config,
+            )
+            request = builder.build(
+                analysis_id=result.analysis_id,
+                selected=result.selected,
+                all_hypotheses=result.hypotheses,
+                evidence_list=result.evidence_list,
+                repository_context=RepositoryContext(
+                    full_name=args.full_name or Path(args.repo).name,
+                    branch=branch,
+                    commit_sha=commit_sha or "unknown",
+                    environment=args.environment,
+                ),
+                diff_source=sources.get("git_diff"),
+                log_source=(
+                    sources.get("traceback")
+                    or sources.get("ci_log")
+                    or sources.get("docker_output")
+                ),
+            )
+            final_rca = LLMAnalysisService(
+                OpenAICompatibleLLMClient()
+            ).generate_validated(request)
+        except LLMClientError as e:
+            print(f"[error] {e}", file=sys.stderr)
+            return 1
+        except Exception as e:
+            print(f"[error] LLM result rejected by FinalRCAValidator: {e}", file=sys.stderr)
+            return 1
+        print(json.dumps(final_rca, ensure_ascii=False, indent=2))
+        return 0
 
     confidence = None
     if result.selected:

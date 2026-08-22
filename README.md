@@ -15,7 +15,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-57 اختبار يمرّون بنجاح، مقسّمين لست طبقات:
+62 اختبار يمرّون بنجاح، مقسّمين لسبع طبقات:
 - `test_rules_config.py` (10): تحقق Fail Fast من كل خلل بنيوي محتمل في
   rules.config.json — مكان واحد فقط يكتشف كل هذه الأخطاء.
 - `test_smoke.py` (14): سيناريوهات end-to-end + اختبارات regression،
@@ -28,6 +28,9 @@ pytest tests/ -v
 - `test_collectors_and_cli.py` (11): تشغيل GitCollector/FileCollector/CLI
   فعليًا على git repository حقيقي (مبني داخل الاختبار نفسه بـ commit
   حقيقي)، وليس على نصوص مصطنعة.
+- `test_llm_integration.py` (5): التحقق من عزل RCARequest، وسياسة الـ prompt،
+  ومرور FinalRCAValidator، والفشل الصريح عند تعطل مزود الـ LLM أو غياب
+  credentials.
 
 راجع `docs/TECHNICAL_DEBT.md` لتوثيق كل خطأ حقيقي تم اكتشافه وتصحيحه
 أثناء التطوير الفعلي.
@@ -47,6 +50,37 @@ python3 -m cli.main analyze \
 الكود. النطاق الحالي محدود لـ Git محلي + ملفات محلية فقط؛ الاتصال الحي
 بـ GitHub Actions API / Docker daemon / Kubernetes مسجّل في
 `docs/TECHNICAL_DEBT.md` كخطوة تالية واضحة.
+
+## طبقة شرح LLM (Phase 1)
+
+القرار لا يزال حتميًا بالكامل. عند استخدام الخيار `--llm` يصبح التدفق:
+
+```
+Real Git/files → AnalysisPipeline → RCARequest → LLM
+                                            → FinalRCA schema
+                                            → FinalRCAValidator → JSON result
+```
+
+الـ LLM يستقبل فقط `RCARequest` المقصوص والمبني بواسطة
+`RCARequestBuilder`، ولا يستقبل مصادر الحادث الخام كوسائط منفصلة. ولا يوجد
+fallback إلى Fake أو نتيجة ثابتة في مسار التشغيل الحقيقي.
+
+شغّل المسار الحقيقي بعد ضبط الإعدادات في البيئة (لا تضع المفتاح في Git):
+
+```bash
+export AUTORCA_LLM_PROVIDER=openai-compatible
+export AUTORCA_LLM_MODEL=<model-name>
+export AUTORCA_LLM_API_KEY=<secret>
+python3 -m cli.main analyze \
+  --repo /path/to/real/git/repo \
+  --environment production \
+  --traceback /path/to/real/traceback.txt \
+  --llm
+```
+
+يدعم `AUTORCA_LLM_BASE_URL` بوابات OpenAI-compatible، وقيمته الافتراضية
+`https://api.openai.com/v1`. عند غياب المفتاح أو النموذج يفشل الأمر بوضوح.
+الاختبارات تستخدم `FakeLLMClient` داخل `tests/` فقط ولا تحتاج إنترنت أو API.
 
 ## الاستخدام البرمجي
 
