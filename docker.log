@@ -1,0 +1,5 @@
+> app@1.0.0 start
+> node server.js
+
+Error: listen EADDRINUSE: address already in use :::8000
+    at Server.setupListenHandle
