@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "config_id": "rules-config-v1",
+
+  "classification_rules": [
+    {
+      "id": "CR001",
+      "observation_kind": "key_error",
+      "source": "traceback",
+      "conditions": [],
+      "produces_failure_type_id": "FT001",
+      "classification_method": "rule",
+      "description": "أي KeyError في الـ traceback يُصنَّف مباشرة كدليل على متغير بيئة مفقود."
+    },
+    {
+      "id": "CR002",
+      "observation_kind": "diff_removed_line",
+      "source": "git_diff",
+      "conditions": [
+        { "field": "location.file", "matches": "(^|/)\\.env($|\\.[a-zA-Z]+$)" },
+        { "field": "data.line_content", "matches": "^[A-Z_][A-Z0-9_]*\\s*=" }
+      ],
+      "produces_failure_type_id": "FT001",
+      "classification_method": "pattern",
+      "description": "سطر أُزيل من ملف .env ويطابق نمط KEY=VALUE يُصنَّف كدليل مؤيّد إضافي على فقدان متغير بيئة."
+    },
+    {
+      "id": "CR003",
+      "observation_kind": "module_not_found_error",
+      "source": "traceback",
+      "conditions": [],
+      "produces_failure_type_id": "FT002",
+      "classification_method": "rule",
+      "description": "أي ModuleNotFoundError / Cannot find module يُصنَّف مباشرة كدليل على اعتماد مفقود."
+    },
+    {
+      "id": "CR004",
+      "observation_kind": "diff_removed_line",
+      "source": "git_diff",
+      "conditions": [
+        { "field": "location.file", "matches": "(requirements.*\\.txt$|package\\.json$|Pipfile$|pyproject\\.toml$)" }
+      ],
+      "produces_failure_type_id": "FT002",
+      "classification_method": "pattern",
+      "description": "سطر أُزيل من ملف اعتمادات يُصنَّف كدليل مؤيّد إضافي على اعتماد مفقود."
+    },
+    {
+      "id": "CR005",
+      "observation_kind": "address_in_use_error",
+      "source": "docker_output",
+      "conditions": [],
+      "produces_failure_type_id": "FT003",
+      "classification_method": "rule",
+      "description": "أي رسالة EADDRINUSE / Address already in use تُصنَّف مباشرة كدليل على تعارض منفذ."
+    }
+  ],
+
+  "hypothesis_rules": {
+    "FT001": { "links": [ { "hypothesis_id": "RC_missing_env", "relation": "supports", "weight": 0.55 } ] },
+    "FT002": { "links": [ { "hypothesis_id": "RC_missing_dependency", "relation": "supports", "weight": 0.55 } ] },
+    "FT003": { "links": [ { "hypothesis_id": "RC_port_conflict", "relation": "supports", "weight": 0.60 } ] }
+  },
+
+  "corroboration_rules": {
+    "description": "أول دليل يصل لفرضية (بصرف النظر عن ترتيب المصادر في sources dict) ياخذ الوزن الأساسي من hypothesis_rules، وأي دليل إضافي بعده من classification_rule مختلفة يضيف وزن تعزيز من الجدول تحت. الجدول متماثل (Symmetric) عمدًا: كل قاعدة مشاركة في corroboration لها نفس وزن 0.35 سواء وصلت أولى أو ثانية، عشان النتيجة النهائية لا تعتمد على ترتيب تشغيل الـ Extractors أو ترتيب مفاتيح sources dict.",
+    "additional_evidence_weight": {
+      "CR001": 0.35,
+      "CR002": 0.35,
+      "CR003": 0.35,
+      "CR004": 0.35
+    }
+  },
+
+  "decision_rules": {
+    "min_score_to_select": 0.50,
+    "min_gap_between_top_two": 0.15,
+    "score_clamp": { "min": 0.0, "max": 1.0 }
+  },
+
+  "confidence_normalization": {
+    "method": "clamp_and_round",
+    "input": "hypothesis.score",
+    "output_field": "confidence",
+    "clamp": { "min": 0.0, "max": 1.0 },
+    "round_to": 2,
+    "description": "raw score != confidence. تُنفَّذ في ScoringEngine كخطوة مستقلة بعد حساب score."
+  },
+
+  "severity_policy": {
+    "description": "default_severity يأتي من taxonomy.yaml. آخر قاعدة مطابقة في escalation_rules هي التي تفوز.",
+    "escalation_rules": [
+      { "id": "SP001", "when": { "failure_type_id": "FT001", "context.environment": "production" }, "set_severity": "critical" },
+      { "id": "SP002", "when": { "failure_type_id": "FT003", "context.environment": "production" }, "set_severity": "high" },
+      { "id": "SP003", "when": { "context.environment": "local" }, "set_severity": "low" }
+    ]
+  },
+
+  "rca_request_limits": {
+    "max_diff_lines": 60,
+    "max_log_lines": 40,
+    "log_context_window": 3,
+    "description": "حدود قص (truncation) لحجم diff_excerpt وlog_excerpt في RCARequest. يجب أن تُقرأ من هنا وليس من ثوابت مكتوبة في الكود."
+  },
+
+  "fix_hints": {
+    "description": "اقتراح إصلاح حتمي مبدئي (Deterministic Placeholder) لكل نوع عطل، يُستخدم في Incident Report لحد ما يتم ربط LLM حقيقي. هذا النص ثابت ومكتوب مسبقًا، وليس ناتجًا عن أي نموذج لغوي — الغرض منه إعطاء قيمة عملية فورية للمستخدم، مع وضوح كامل أنه سيُستبدل بشرح مولَّد من LLM بمجرد تكامله.",
+    "FT001": "Restore the missing environment variable and redeploy the service.",
+    "FT002": "Reinstall the missing package and ensure it is pinned in the dependency manifest, then redeploy.",
+    "FT003": "Check for an existing process or container already bound to this port, stop it or reassign the port, then redeploy."
+  },
+
+  "hypotheses_catalog": {
+    "RC_missing_env": {
+      "public_id": "RC1",
+      "failure_type_id": "FT001",
+      "label": "missing_environment_variable",
+      "description": "A required environment variable is missing at runtime."
+    },
+    "RC_missing_dependency": {
+      "public_id": "RC2",
+      "failure_type_id": "FT002",
+      "label": "missing_dependency",
+      "description": "A required package or module is not installed or is missing from the dependency manifest."
+    },
+    "RC_port_conflict": {
+      "public_id": "RC3",
+      "failure_type_id": "FT003",
+      "label": "port_conflict",
+      "description": "The application failed to bind because the target port is already in use."
+    }
+  }
+}

@@ -1,0 +1,155 @@
+version: 2
+
+severity_levels:
+  - critical
+  - high
+  - medium
+  - low
+  - info
+
+categories:
+  - id: environment
+    label: "Environment"
+    description: "أعطال متعلقة بمتغيرات البيئة والإعدادات"
+
+  - id: build
+    label: "Build"
+    description: "أعطال متعلقة بعملية البناء والاعتمادات (Dependencies)"
+
+  - id: network
+    label: "Network"
+    description: "أعطال متعلقة بالشبكة والمنافذ (Ports)"
+
+  - id: runtime
+    label: "Runtime"
+    description: "أعطال تحدث أثناء تشغيل التطبيق بعد نجاح البناء"
+
+  - id: testing
+    label: "Testing"
+    description: "أعطال متعلقة بفشل الاختبارات الآلية"
+
+  - id: security
+    label: "Security"
+    description: "أعطال متعلقة بالأسرار (Secrets) والصلاحيات"
+
+  - id: database
+    label: "Database"
+    description: "أعطال متعلقة بالاتصال أو التعامل مع قواعد البيانات"
+
+failure_types:
+  - id: FT001
+    type: missing_env
+    category: environment
+    label: "Missing Environment Variable"
+    description: "متغير بيئة مطلوب غير موجود وقت التشغيل"
+    status: implemented
+    default_severity: high
+    tags: [ci, runtime, configuration]
+    examples:
+      - "KeyError: 'PORT'"
+      - "KeyError: PORT"
+      - "Environment variable PORT is not set"
+      - "os.environ['PORT']"
+
+  - id: FT002
+    type: missing_dependency
+    category: build
+    label: "Missing Dependency"
+    description: "حزمة أو مكتبة مطلوبة غير مثبتة أو غير موجودة في ملف الاعتمادات"
+    status: implemented
+    default_severity: critical
+    tags: [ci, build, dependencies]
+    examples:
+      - "ModuleNotFoundError: No module named 'requests'"
+      - "Cannot find module 'express'"
+      - "ImportError: No module named requests"
+
+  - id: FT003
+    type: port_conflict
+    category: network
+    label: "Port Conflict"
+    description: "فشل التطبيق في الارتباط بالمنفذ لأنه مستخدم بالفعل"
+    status: implemented
+    default_severity: medium
+    tags: [runtime, network, deployment]
+    examples:
+      - "Error: listen EADDRINUSE: address already in use :::8000"
+      - "OSError: [Errno 98] Address already in use"
+      - "bind: address already in use"
+
+  - id: FT004
+    type: import_error
+    category: runtime
+    label: "Import Error"
+    description: "فشل استيراد وحدة برمجية موجودة بسبب خطأ في المسار أو الإصدار"
+    status: planned
+    default_severity: high
+    tags: [runtime, configuration]
+    examples:
+      - "ImportError: cannot import name 'X' from 'Y'"
+
+  - id: FT005
+    type: docker_build_failure
+    category: build
+    label: "Docker Build Failure"
+    description: "فشل عملية بناء صورة Docker لسبب غير متعلق بالاعتمادات"
+    status: planned
+    default_severity: critical
+    tags: [ci, build, docker]
+    examples:
+      - "failed to solve: process did not complete successfully"
+
+  - id: FT006
+    type: test_failure
+    category: testing
+    label: "Unit Test Failure"
+    description: "فشل واحد أو أكثر من الاختبارات الآلية أثناء الـ CI"
+    status: planned
+    default_severity: medium
+    tags: [ci, testing]
+    examples:
+      - "FAILED tests/test_api.py::test_create_user"
+
+  - id: FT007
+    type: health_check_failure
+    category: runtime
+    label: "Health Check Failure"
+    description: "فشل نقطة فحص الصحة (Health Check) بعد النشر"
+    status: planned
+    default_severity: critical
+    tags: [runtime, deployment, monitoring]
+    examples:
+      - "Health check failed: connection refused on /healthz"
+
+  - id: FT008
+    type: missing_secret
+    category: security
+    label: "Missing Secret"
+    description: "سر (Secret) مطلوب غير معرّف في بيئة الـ CI/CD"
+    status: planned
+    default_severity: critical
+    tags: [ci, security, configuration]
+    examples:
+      - "Error: Input required and not supplied: API_KEY"
+
+  - id: FT009
+    type: db_connection_failure
+    category: database
+    label: "Database Connection Failure"
+    description: "فشل الاتصال بقاعدة البيانات وقت التشغيل"
+    status: planned
+    default_severity: critical
+    tags: [runtime, database]
+    examples:
+      - "could not connect to server: Connection refused"
+
+  - id: FT010
+    type: permission_error
+    category: security
+    label: "Permission Error"
+    description: "فشل عملية بسبب نقص صلاحيات الوصول لملف أو مورد"
+    status: planned
+    default_severity: medium
+    tags: [runtime, security]
+    examples:
+      - "PermissionError: [Errno 13] Permission denied"

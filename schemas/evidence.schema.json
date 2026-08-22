@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://autorca.local/schemas/evidence.schema.json",
+  "title": "Evidence",
+  "description": "Classified fact derived from an Observation via classification_rules.",
+  "type": "object",
+  "required": [
+    "id", "analysis_id", "schema_version", "observation_id",
+    "failure_type_id", "classification_rule_id", "type", "source",
+    "classification_method", "producer_id", "producer_version",
+    "data", "extracted_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^E[0-9]+$" },
+    "analysis_id": { "type": "string", "pattern": "^AR[0-9]{8}-[0-9]{3,}$" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "observation_id": { "type": "string", "pattern": "^O[0-9]+$" },
+    "failure_type_id": { "type": "string", "pattern": "^FT[0-9]+$" },
+    "classification_rule_id": { "type": "string", "pattern": "^CR[0-9]+$" },
+    "type": { "type": "string" },
+    "source": {
+      "type": "string",
+      "enum": ["traceback", "git_diff", "ci_log", "docker_output", "test_output"]
+    },
+    "classification_method": {
+      "type": "string",
+      "enum": ["regex", "parser", "rule", "pattern", "heuristic", "ast"]
+    },
+    "producer_id": { "type": "string" },
+    "producer_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "data": { "type": "object", "minProperties": 1 },
+    "raw_reference": { "type": ["string", "null"] },
+    "extracted_at": { "type": "string", "format": "date-time" }
+  }
+}

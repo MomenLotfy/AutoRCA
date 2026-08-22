@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://autorca.local/schemas/observation.schema.json",
+  "title": "Observation",
+  "description": "Raw fact extracted from a single source, without interpretation.",
+  "type": "object",
+  "required": [
+    "id", "analysis_id", "schema_version", "kind", "source",
+    "producer_id", "producer_version", "location", "data",
+    "raw_reference", "extracted_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^O[0-9]+$" },
+    "analysis_id": { "type": "string", "pattern": "^AR[0-9]{8}-[0-9]{3,}$" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "key_error", "module_not_found_error", "address_in_use_error",
+        "diff_removed_line", "diff_added_line", "exit_code_nonzero",
+        "generic_log_line"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": ["traceback", "git_diff", "ci_log", "docker_output", "test_output"]
+    },
+    "producer_id": { "type": "string" },
+    "producer_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": ["string", "null"] },
+        "line": { "type": ["integer", "null"] },
+        "commit_sha": { "type": ["string", "null"] },
+        "step_name": { "type": ["string", "null"] }
+      }
+    },
+    "data": { "type": "object", "minProperties": 1 },
+    "raw_reference": { "type": "string", "minLength": 1 },
+    "extracted_at": { "type": "string", "format": "date-time" }
+  }
+}

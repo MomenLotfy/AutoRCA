@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://autorca.local/schemas/final_rca.schema.json",
+  "title": "FinalRCA",
+  "description": "LLM output, validated against the deterministic decision it must not change.",
+  "type": "object",
+  "required": [
+    "schema_version", "analysis_id", "selected_hypothesis_id", "confidence",
+    "explanation", "fix", "pull_request", "incident_report", "generation_metadata"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "analysis_id": { "type": "string", "pattern": "^AR[0-9]{8}-[0-9]{3,}$" },
+    "selected_hypothesis_id": { "type": "string", "pattern": "^RC[0-9]+$" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "explanation": {
+      "type": "object",
+      "required": ["summary", "reasoning", "cited_evidence_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "maxLength": 300 },
+        "reasoning": { "type": "string", "maxLength": 1500 },
+        "cited_evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^E[0-9]+$" }
+        }
+      }
+    },
+    "fix": {
+      "type": "object",
+      "required": ["description", "steps", "cited_evidence_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "maxLength": 500 },
+        "steps": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "cited_evidence_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^E[0-9]+$" }
+        }
+      }
+    },
+    "pull_request": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["title", "branch_name", "commit_message", "diff", "description"],
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string", "maxLength": 120 },
+            "branch_name": { "type": "string", "pattern": "^[a-z0-9._/-]+$" },
+            "commit_message": { "type": "string", "maxLength": 200 },
+            "diff": { "type": "string" },
+            "description": { "type": "string", "maxLength": 2000 }
+          }
+        }
+      ]
+    },
+    "incident_report": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["title", "severity", "summary", "root_cause", "impact", "resolution"],
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string", "maxLength": 150 },
+            "severity": { "type": "string", "enum": ["critical", "high", "medium", "low", "info"] },
+            "summary": { "type": "string", "maxLength": 400 },
+            "root_cause": { "type": "string", "maxLength": 500 },
+            "impact": { "type": "string", "maxLength": 300 },
+            "resolution": { "type": "string", "maxLength": 500 }
+          }
+        }
+      ]
+    },
+    "generation_metadata": {
+      "type": "object",
+      "required": ["model", "prompt_version", "generated_at"],
+      "additionalProperties": false,
+      "properties": {
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
