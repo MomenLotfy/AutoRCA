@@ -82,6 +82,29 @@ python3 -m cli.main analyze \
 `https://api.openai.com/v1`. عند غياب المفتاح أو النموذج يفشل الأمر بوضوح.
 الاختبارات تستخدم `FakeLLMClient` داخل `tests/` فقط ولا تحتاج إنترنت أو API.
 
+## السيناريوهات الحقيقية (Phase 3)
+
+ينشئ هذا الأمر ثلاثة incidents مؤقتة من مصادر حقيقية ثم يشغّل عليها
+`GitCollector` و`FileCollector` والـ pipeline:
+
+```bash
+python3 real_scenarios.py
+```
+
+السيناريوهات هي: commit حقيقي يحذف `PORT` مع traceback ناتج من تشغيل Python،
+استيراد package غير موجودة مع `ModuleNotFoundError` حقيقي، وعملية server ثانية
+تحاول استخدام منفذ محجوز وتحصل على `Address already in use`. يطبع التقرير
+commit SHA الحقيقي والملف والـ command المستخدم. بدون `--llm` تكون نتيجة LLM
+موسومة حرفيًا `NOT VERIFIED` ولا تُستخدم نتيجة بديلة.
+
+لتشغيل المسار الكامل مع مزود LLM حقيقي:
+
+```bash
+python3 real_scenarios.py --llm
+```
+
+إذا لم تكن credentials مهيأة، يفشل الأمر بوضوح ولا يدّعي اكتمال التحقق.
+
 ## الاستخدام البرمجي
 
 ```python
