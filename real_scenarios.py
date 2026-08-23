@@ -23,6 +23,7 @@ from collectors.git_collector import GitCollector
 from llm import LLMAnalysisService, OpenAICompatibleLLMClient
 from pipeline import AnalysisPipeline, PipelineInput, PipelineResult
 from rca_request.rca_request_builder import RCARequestBuilder, RepositoryContext
+from reporting.incident_report_renderer import IncidentReportRenderer
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 RULES_CONFIG = PROJECT_ROOT / "rules" / "rules.config.json"
@@ -76,6 +77,15 @@ def _run_real_app(script: Path, output_file: Path, *, env: dict | None = None) -
     )
     if completed.returncode == 0:
         raise RuntimeError(f"Expected real failure, but command succeeded: {script}")
+
+
+def _log_stage(scenario: str, stage: str, value: object) -> None:
+    """Print inspectable execution proof without contaminating JSON stdout."""
+    print(
+        f"\n[{scenario}] {stage}\n"
+        f"{json.dumps(value, ensure_ascii=False, indent=2, default=str)}",
+        file=sys.stderr,
+    )
 
 
 def create_missing_env_scenario(root: Path) -> ScenarioArtifacts:
@@ -192,6 +202,29 @@ def analyze_artifacts(
     git = GitCollector(str(artifacts.repository))
     diff = git.collect_diff(commit=artifacts.commit_sha)
     source = FileCollector.collect(str(artifacts.source_file))
+    _log_stage(
+        artifacts.name,
+        "REAL APPLICATION FAILURE",
+        {
+            "command": artifacts.command,
+            "source_file": str(artifacts.source_file),
+            "output": source.strip(),
+        },
+    )
+    _log_stage(
+        artifacts.name,
+        "COLLECTORS",
+        {
+            "git_diff": {"collected": True, "characters": len(diff), "content": diff},
+            artifacts.source_name: {
+                "collected": True,
+                "characters": len(source),
+                "content": source,
+            },
+            "commit_sha": artifacts.commit_sha,
+            "branch": artifacts.branch,
+        },
+    )
     analysis_number = {
         "Missing Environment Variable": "001",
         "Missing Dependency": "002",
@@ -203,8 +236,52 @@ def analyze_artifacts(
             sources={"git_diff": diff, artifacts.source_name: source},
         )
     )
+    _log_stage(
+        artifacts.name,
+        "OBSERVATIONS",
+        [observation.to_dict() for observation in result.observations],
+    )
+    _log_stage(artifacts.name, "EVIDENCE", result.evidence_list)
+    _log_stage(
+        artifacts.name,
+        "HYPOTHESES",
+        [hypothesis.to_dict() for hypothesis in result.hypotheses],
+    )
     selected = result.selected
     evidence_types = [item["failure_type_id"] for item in result.evidence_list]
+    if not selected:
+        raise RuntimeError(f"{artifacts.name}: deterministic engine selected no root cause.")
+
+    builder = RCARequestBuilder(
+        rule_engine=pipeline._rule_engine,
+        scoring_engine=pipeline._scoring_engine,
+        taxonomy_index=pipeline._taxonomy_index,
+        rules_config=pipeline._rules_config,
+    )
+    request = builder.build(
+        analysis_id=result.analysis_id,
+        selected=selected,
+        all_hypotheses=result.hypotheses,
+        evidence_list=result.evidence_list,
+        repository_context=RepositoryContext(
+            full_name=artifacts.repository.name,
+            branch=artifacts.branch,
+            commit_sha=artifacts.commit_sha,
+            environment=artifacts.environment,
+        ),
+        diff_source=diff,
+        log_source=source,
+    )
+    request_payload = request.to_dict()
+    _log_stage(artifacts.name, "SELECTED HYPOTHESIS", selected.to_dict())
+    _log_stage(artifacts.name, "RCA REQUEST", request_payload)
+    deterministic_report = IncidentReportRenderer(
+        fix_hints=pipeline._rules_config.fix_hints
+    ).render(
+        result,
+        commit_sha=artifacts.commit_sha,
+        confidence=pipeline.compute_confidence(selected.score),
+    )
     output = {
         "scenario": artifacts.name,
         "command": artifacts.command,
@@ -215,37 +292,31 @@ def analyze_artifacts(
         "detected_failure_types": evidence_types,
         "selected_root_cause": selected.label if selected else None,
         "confidence": pipeline.compute_confidence(selected.score) if selected else None,
+        "observations": [observation.to_dict() for observation in result.observations],
+        "evidence": result.evidence_list,
+        "hypotheses": [hypothesis.to_dict() for hypothesis in result.hypotheses],
+        "rca_request": request_payload,
+        "deterministic_incident_report": deterministic_report,
         "llm_status": "NOT VERIFIED",
         "final_rca": None,
+        "validator_status": "NOT RUN",
     }
-    if not selected:
-        raise RuntimeError(f"{artifacts.name}: deterministic engine selected no root cause.")
 
     if use_llm:
-        builder = RCARequestBuilder(
-            rule_engine=pipeline._rule_engine,
-            scoring_engine=pipeline._scoring_engine,
-            taxonomy_index=pipeline._taxonomy_index,
-            rules_config=pipeline._rules_config,
-        )
-        request = builder.build(
-            analysis_id=result.analysis_id,
-            selected=selected,
-            all_hypotheses=result.hypotheses,
-            evidence_list=result.evidence_list,
-            repository_context=RepositoryContext(
-                full_name=artifacts.repository.name,
-                branch=artifacts.branch,
-                commit_sha=artifacts.commit_sha,
-                environment=artifacts.environment,
-            ),
-            diff_source=diff,
-            log_source=source,
-        )
         output["final_rca"] = LLMAnalysisService(
             OpenAICompatibleLLMClient()
         ).generate_validated(request)
         output["llm_status"] = "VERIFIED"
+        output["validator_status"] = "ACCEPTED"
+        output["final_incident_report"] = output["final_rca"].get("incident_report")
+        _log_stage(artifacts.name, "FINAL RCA", output["final_rca"])
+        _log_stage(artifacts.name, "FINAL RCA VALIDATOR", {"status": "ACCEPTED"})
+    else:
+        _log_stage(
+            artifacts.name,
+            "FINAL RCA / VALIDATOR",
+            {"status": "NOT RUN", "reason": "Use --llm with real provider configuration."},
+        )
     return output
 
 
