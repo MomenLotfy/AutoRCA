@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AutoRCA — Incident Analysis</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="eyebrow">DEVOPS INCIDENT INTELLIGENCE</div>
+        <h1>Auto<span>RCA</span></h1>
+        <p>Evidence-based root cause analysis. Deterministic decisions, AI-powered explanations.</p>
+      </header>
+
+      <section class="panel form-panel">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">REAL INCIDENT INPUT</div>
+            <h2>Analyze an incident</h2>
+          </div>
+          <span class="live-pill"><i></i> LOCAL ANALYSIS</span>
+        </div>
+        <form id="analysis-form">
+          <div class="grid two">
+            <label>Git repository path
+              <input name="repo" required placeholder="/path/to/real/git/repository">
+              <small>Must be a local Git repository.</small>
+            </label>
+            <label>Environment
+              <select name="environment" required>
+                <option value="production">Production</option>
+                <option value="staging">Staging</option>
+                <option value="local">Local</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Traceback / log file <span class="optional">optional</span>
+              <input name="traceback" placeholder="/path/to/real/traceback.txt">
+            </label>
+            <label>Commit SHA <span class="optional">optional</span>
+              <input name="commit" placeholder="Defaults to latest commit">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Repository name <span class="optional">optional</span>
+              <input name="full_name" placeholder="org/repository">
+            </label>
+            <label>CI / Docker log file <span class="optional">optional</span>
+              <input name="ci_log" placeholder="/path/to/real/ci.log">
+            </label>
+          </div>
+          <div class="form-footer">
+            <label class="check"><input type="checkbox" name="no_diff"> Skip Git diff collection</label>
+            <button type="submit" id="submit-button"><span>Run analysis</span><b>→</b></button>
+          </div>
+        </form>
+        <div id="status" class="status" hidden></div>
+      </section>
+
+      <section id="results" hidden>
+        <div class="result-banner">
+          <div><div class="eyebrow">ANALYSIS COMPLETE</div><strong id="incident-id"></strong></div>
+          <span id="environment-badge"></span>
+        </div>
+        <div class="panel deterministic">
+          <div class="section-heading compact">
+            <div>
+              <div class="label deterministic-label">DETERMINISTIC RESULT</div>
+              <h2>Root cause decision</h2>
+            </div>
+            <div class="confidence"><span id="confidence-value">—</span><small>confidence</small></div>
+          </div>
+          <div class="root-cause" id="root-cause">—</div>
+          <div class="metrics">
+            <div><span>SEVERITY</span><strong id="severity">—</strong></div>
+            <div><span>RELATED COMMIT</span><strong id="commit-sha">—</strong></div>
+            <div><span>REPOSITORY</span><strong id="repository">—</strong></div>
+          </div>
+          <div class="evidence-block">
+            <div class="label">SUPPORTING EVIDENCE</div>
+            <div id="evidence-list" class="evidence-list"></div>
+          </div>
+        </div>
+        <div class="panel ai-panel">
+          <div class="section-heading compact">
+            <div>
+              <div class="label ai-label">AI-GENERATED EXPLANATION</div>
+              <h2>What happened and what to do</h2>
+            </div>
+            <span class="ai-mark">✦</span>
+          </div>
+          <div class="ai-grid">
+            <div><div class="label">EXPLANATION</div><p id="explanation"></p><p class="reasoning" id="reasoning"></p></div>
+            <div class="fix-card"><div class="label">RECOMMENDED FIX</div><h3 id="fix-description"></h3><ol id="fix-steps"></ol></div>
+          </div>
+        </div>
+      </section>
+      <footer>AutoRCA <span>•</span> AI explains the decision. AI does not make the decision.</footer>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

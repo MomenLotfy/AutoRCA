@@ -1,0 +1,206 @@
+from __future__ import annotations
+
+import json
+import mimetypes
+import sys
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlparse
+
+from collectors.file_collector import FileCollector, FileCollectorError
+from collectors.git_collector import GitCollector, GitCollectorError
+from llm import LLMAnalysisService, LLMClientError, OpenAICompatibleLLMClient
+from pipeline import AnalysisPipeline, PipelineInput
+from rca_request.rca_request_builder import RCARequestBuilder, RepositoryContext
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+STATIC_ROOT = PROJECT_ROOT / "web" / "static"
+RULES_CONFIG = PROJECT_ROOT / "rules" / "rules.config.json"
+TAXONOMY = PROJECT_ROOT / "taxonomy" / "taxonomy.yaml"
+
+
+class AnalysisRequestError(ValueError):
+    pass
+
+
+def _analysis_id() -> str:
+    return f"AR{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S%f')[:-3]}"
+
+
+def analyze_incident(payload: dict) -> dict:
+    repo = str(payload.get("repo", "")).strip()
+    environment = str(payload.get("environment", "")).strip()
+    if not repo:
+        raise AnalysisRequestError("A real Git repository path is required.")
+    if environment not in {"local", "staging", "production"}:
+        raise AnalysisRequestError("Environment must be local, staging, or production.")
+
+    try:
+        git = GitCollector(repo)
+    except GitCollectorError as exc:
+        raise AnalysisRequestError(str(exc)) from exc
+
+    sources: dict[str, str] = {}
+    if not payload.get("no_diff", False):
+        try:
+            sources["git_diff"] = git.collect_diff(commit=payload.get("commit") or None)
+        except GitCollectorError:
+            # A repository may have no commit yet; other real files can still be used.
+            pass
+
+    source_fields = (
+        ("traceback", "traceback"),
+        ("docker_log", "docker_output"),
+        ("ci_log", "ci_log"),
+    )
+    for field, source_name in source_fields:
+        path = str(payload.get(field, "")).strip()
+        if path:
+            try:
+                sources[source_name] = FileCollector.collect(path)
+            except FileCollectorError as exc:
+                raise AnalysisRequestError(str(exc)) from exc
+
+    if not sources:
+        raise AnalysisRequestError(
+            "No incident data collected. Provide a real traceback/log path or allow Git diff collection."
+        )
+
+    try:
+        commit_sha = payload.get("commit") or git.resolve_commit_sha()
+    except GitCollectorError:
+        commit_sha = "unknown"
+    try:
+        branch = git.resolve_branch()
+    except GitCollectorError:
+        branch = "unknown"
+
+    pipeline = AnalysisPipeline.from_config_files(RULES_CONFIG, TAXONOMY)
+    result = pipeline.run(PipelineInput(analysis_id=_analysis_id(), sources=sources))
+    selected = result.selected
+    deterministic = {
+        "analysis_id": result.analysis_id,
+        "environment": environment,
+        "commit_sha": commit_sha,
+        "branch": branch,
+        "repository": str(payload.get("full_name", "")).strip() or Path(repo).name,
+        "root_cause": selected.label if selected else None,
+        "confidence": pipeline.compute_confidence(selected.score) if selected else None,
+        "severity": (
+            pipeline.resolve_severity(
+                selected.failure_type_id,
+                {"environment": environment},
+            )
+            if selected
+            else None
+        ),
+        "evidence": result.evidence_list,
+    }
+
+    if not selected:
+        return {"deterministic": deterministic, "final_rca": None}
+
+    builder = RCARequestBuilder(
+        rule_engine=pipeline._rule_engine,
+        scoring_engine=pipeline._scoring_engine,
+        taxonomy_index=pipeline._taxonomy_index,
+        rules_config=pipeline._rules_config,
+    )
+    request = builder.build(
+        analysis_id=result.analysis_id,
+        selected=selected,
+        all_hypotheses=result.hypotheses,
+        evidence_list=result.evidence_list,
+        repository_context=RepositoryContext(
+            full_name=deterministic["repository"],
+            branch=branch,
+            commit_sha=commit_sha,
+            environment=environment,
+        ),
+        diff_source=sources.get("git_diff"),
+        log_source=(
+            sources.get("traceback")
+            or sources.get("ci_log")
+            or sources.get("docker_output")
+        ),
+    )
+    try:
+        final_rca = LLMAnalysisService(
+            OpenAICompatibleLLMClient()
+        ).generate_validated(request)
+    except LLMClientError as exc:
+        raise AnalysisRequestError(str(exc)) from exc
+
+    return {"deterministic": deterministic, "final_rca": final_rca}
+
+
+class AutoRCAHandler(BaseHTTPRequestHandler):
+    server_version = "AutoRCAWeb/1.0"
+
+    def do_GET(self) -> None:
+        path = urlparse(self.path).path
+        if path == "/":
+            self._serve_static("index.html")
+        elif path in {"/app.js", "/styles.css"}:
+            self._serve_static(path.lstrip("/"))
+        elif path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+        else:
+            self._send_json({"error": "Not found"}, 404)
+
+    def do_POST(self) -> None:
+        if urlparse(self.path).path != "/api/analyze":
+            self._send_json({"error": "Not found"}, 404)
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length > 64 * 1024:
+                raise AnalysisRequestError("Request is too large.")
+            payload = json.loads(self.rfile.read(length))
+            result = analyze_incident(payload)
+            self._send_json(result, 200)
+        except (json.JSONDecodeError, AnalysisRequestError) as exc:
+            self._send_json({"error": str(exc)}, 400)
+        except Exception as exc:
+            self._send_json({"error": f"Analysis failed: {exc}"}, 500)
+
+    def _serve_static(self, name: str) -> None:
+        path = (STATIC_ROOT / name).resolve()
+        if STATIC_ROOT not in path.parents or not path.is_file():
+            self._send_json({"error": "Not found"}, 404)
+            return
+        content = path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", mimetypes.guess_type(str(path))[0] or "text/plain")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
+    def _send_json(self, value: dict, status: int) -> None:
+        content = json.dumps(value, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
+    def log_message(self, format: str, *args) -> None:
+        print(f"[web] {self.address_string()} - {format % args}", file=sys.stderr)
+
+
+def main() -> None:
+    port = int(__import__("os").environ.get("PORT", "5000"))
+    server = ThreadingHTTPServer(("0.0.0.0", port), AutoRCAHandler)
+    print(f"AutoRCA UI listening on http://0.0.0.0:{port}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
