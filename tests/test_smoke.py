@@ -244,6 +244,70 @@ def test_unrelated_log_produces_no_hypotheses(pipeline):
 
 
 # =============================================================================
+# Regression: KeyError داخل مخرجات Docker (سجل الـ container) لازم يُصنَّف
+# كدليل على FT001 بدل ما يضيع. الـ bug ظهر عند تشغيل CLI حقيقي على حادثة
+# FastAPI حقيقية: `connect.py` كانت ترفع `KeyError: 'DOCKER_DATABASE_URL'`
+# والـ KeyError ده طُبع داخل stdout الـ container بدل ما يكون في traceback
+# منفصل. قبل الإصلاح: `missing_env_extractor` كان مسجل لـ source="traceback"
+# فقط، فما كانش بيطلّع observation من docker_output، والـ EvidenceBuilder
+# ما كانش عنده classification_rule تطابق (kind=key_error, source=docker_output).
+# الإصلاح: (1) تسجيل `MissingEnvDockerOutputExtractor` و
+# `MissingEnvCILogExtractor` بنفس regex/dedup، و(2) إضافة CR006 و CR007 في
+# rules.config.json يربطوا (key_error, docker_output|ci_log) → FT001، مع
+# إضافتهم في additional_evidence_weight لتأكيد الترتيب-اللامتماثل.
+# =============================================================================
+
+
+def test_missing_env_keyerror_in_docker_output_is_classified(pipeline, rules_config):
+    docker_log = (
+        "Traceback (most recent call last):\n"
+        '  File "/server/app/connect.py", line 38, in <module>\n'
+        '    DATABASE_URL = os.environ["DOCKER_DATABASE_URL"]\n'
+        "  File \"<frozen os>\", line 679, in __getitem__\n"
+        "KeyError: 'DOCKER_DATABASE_URL'\n"
+        "web-1 exited with code 1\n"
+    )
+    result = pipeline.run(
+        PipelineInput(
+            analysis_id="AR20260825-001",
+            sources={"docker_output": docker_log, "git_diff": MISSING_ENV_GIT_DIFF},
+        )
+    )
+
+    assert any(e["source"] == "docker_output" for e in result.evidence_list)
+    assert {e["failure_type_id"] for e in result.evidence_list} == {"FT001"}
+
+    selected = get_selected(result.hypotheses)
+    assert selected is not None
+    assert selected.failure_type_id == "FT001"
+
+    # Two independent evidence sources → corroboration kicks in (0.55 + 0.35 = 0.90)
+    expected_score = expected_score_for_two_classification_rules(
+        rules_config, "FT001", second_classification_rule_id="CR006"
+    )
+    assert selected.score == pytest.approx(expected_score, abs=1e-6)
+
+
+def test_missing_env_keyerror_in_ci_log_is_classified(pipeline, rules_config):
+    ci_log = (
+        "Run pytest\n"
+        "Traceback (most recent call last):\n"
+        '  File "app.py", line 10, in <module>\n'
+        "    secret = os.environ['AWS_SECRET_ACCESS_KEY']\n"
+        "KeyError: 'AWS_SECRET_ACCESS_KEY'\n"
+    )
+    result = pipeline.run(PipelineInput(analysis_id="AR20260825-002", sources={"ci_log": ci_log}))
+
+    assert len(result.evidence_list) == 1
+    assert result.evidence_list[0]["source"] == "ci_log"
+    assert result.evidence_list[0]["data"]["key"] == "AWS_SECRET_ACCESS_KEY"
+
+    selected = get_selected(result.hypotheses)
+    assert selected is not None
+    assert selected.failure_type_id == "FT001"
+
+
+# =============================================================================
 # اختبار Regression: corroboration لازم يعتمد على "أول دليل للفرضية"
 # وليس "أول دليل لكل classification_rule_id" — bug ظهر فعليًا أول تشغيل
 # حقيقي للـ pipeline وأنتج score=1.0 (بعد clamp) بدل 0.90 المتوقع، لأن كل

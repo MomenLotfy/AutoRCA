@@ -69,3 +69,35 @@ class MissingEnvTracebackExtractor(BaseExtractor):
 
         last_frame = frames[-1]
         return last_frame.group("file"), int(last_frame.group("line"))
+
+
+@registry.register(
+    ExtractorMetadata(
+        extractor_id="missing_env_docker_output_extractor",
+        version="1.0.0",
+        source="docker_output",
+        produces_kinds=("key_error",),
+        description=(
+            "يستخلص KeyError من مخرجات Docker (مثل stdout/stderr من "
+            "uvicorn) لأن traceback التطبيق يظهر داخل سجل الـ container."
+        ),
+    )
+)
+class MissingEnvDockerOutputExtractor(MissingEnvTracebackExtractor):
+    EXTRACTOR_ID = "missing_env_docker_output_extractor"
+
+
+@registry.register(
+    ExtractorMetadata(
+        extractor_id="missing_env_ci_log_extractor",
+        version="1.0.0",
+        source="ci_log",
+        produces_kinds=("key_error",),
+        description=(
+            "يستخلص KeyError من سجل CI (مثل GitHub Actions log) لأن "
+            "traceback التطبيق قد يظهر داخل خطوة CI بدل traceback مباشر."
+        ),
+    )
+)
+class MissingEnvCILogExtractor(MissingEnvTracebackExtractor):
+    EXTRACTOR_ID = "missing_env_ci_log_extractor"

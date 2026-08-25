@@ -52,6 +52,24 @@
       "produces_failure_type_id": "FT003",
       "classification_method": "rule",
       "description": "أي رسالة EADDRINUSE / Address already in use تُصنَّف مباشرة كدليل على تعارض منفذ."
+    },
+    {
+      "id": "CR006",
+      "observation_kind": "key_error",
+      "source": "docker_output",
+      "conditions": [],
+      "produces_failure_type_id": "FT001",
+      "classification_method": "rule",
+      "description": "أي KeyError يظهر داخل مخرجات Docker (traceback التطبيق الذي طُبع في stdout/stderr للـ container) يُصنَّف مباشرة كدليل على متغير بيئة مفقود."
+    },
+    {
+      "id": "CR007",
+      "observation_kind": "key_error",
+      "source": "ci_log",
+      "conditions": [],
+      "produces_failure_type_id": "FT001",
+      "classification_method": "rule",
+      "description": "أي KeyError يظهر داخل سجل CI يُصنَّف مباشرة كدليل على متغير بيئة مفقود."
     }
   ],
 
@@ -67,7 +85,9 @@
       "CR001": 0.35,
       "CR002": 0.35,
       "CR003": 0.35,
-      "CR004": 0.35
+      "CR004": 0.35,
+      "CR006": 0.35,
+      "CR007": 0.35
     }
   },
 
