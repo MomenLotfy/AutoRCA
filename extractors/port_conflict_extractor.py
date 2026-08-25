@@ -16,6 +16,24 @@ _PYTHON_ADDRESS_IN_USE_PATTERN = re.compile(
     r"OSError:\s*\[Errno 98\]\s*Address already in use",
     re.IGNORECASE,
 )
+
+# Docker daemon-level port-bind error (e.g. when port-mapping "8000:8000"
+# conflicts with a host process holding the port). This text comes straight
+# from the Docker engine, not the application — must be classified as
+# port_conflict nonetheless because it has the same root cause.
+_DOCKER_DAEMON_BIND_PATTERN = re.compile(
+    r"failed to bind host port\s+(?P<host>[\d.]+):(?P<port>\d{2,5})"
+    r"(?:/[a-z]+)?:\s*address already in use",
+    re.IGNORECASE,
+)
+
+# Generic kernel-level bind failure ("bind: address already in use")
+# seen when an app process can't bind() without going through Python
+# or Node.js frameworks (Go binaries, raw C apps).
+_GENERIC_BIND_FAILURE_PATTERN = re.compile(
+    r"bind:\s*(?P<prefix>.*?)address already in use",
+    re.IGNORECASE,
+)
 _NEARBY_PORT_PATTERN = re.compile(r"(?:port|:)\s*=?\s*(?P<port>\d{2,5})\b")
 
 
@@ -56,6 +74,44 @@ class PortConflictDockerExtractor(BaseExtractor):
                     kind="address_in_use_error",
                     location=Location(),
                     data={"port": int(port)},
+                    raw_reference=match.group(0).strip(),
+                )
+            )
+
+        for match in _DOCKER_DAEMON_BIND_PATTERN.finditer(raw_content):
+            port = match.group("port")
+            signature = f"docker:{port}"
+            if signature in seen_signatures:
+                continue
+            seen_signatures.add(signature)
+
+            observations.append(
+                self.build_observation(
+                    context=context,
+                    kind="address_in_use_error",
+                    location=Location(),
+                    data={"port": int(port), "source_kind": "docker_daemon"},
+                    raw_reference=match.group(0).strip(),
+                )
+            )
+
+        for match in _GENERIC_BIND_FAILURE_PATTERN.finditer(raw_content):
+            port = self._find_nearby_port(raw_content, match.start())
+            signature = f"generic:{port if port is not None else match.start()}"
+            if signature in seen_signatures:
+                continue
+            seen_signatures.add(signature)
+
+            data: dict[str, object] = {"source_kind": "generic_bind"}
+            if port is not None:
+                data["port"] = port
+
+            observations.append(
+                self.build_observation(
+                    context=context,
+                    kind="address_in_use_error",
+                    location=Location(),
+                    data=data,
                     raw_reference=match.group(0).strip(),
                 )
             )

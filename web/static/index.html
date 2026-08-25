@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AutoRCA — Incident Analysis</title>
+    <title>AutoRCA — Investigation Console</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
@@ -14,19 +14,20 @@
         <p>Evidence-based root cause analysis. Deterministic decisions, AI-powered explanations.</p>
       </header>
 
-      <section class="panel form-panel">
+      <!-- ============== Create new investigation ============== -->
+      <section class="panel form-panel" id="new-investigation-panel">
         <div class="section-heading">
           <div>
             <div class="eyebrow">REAL INCIDENT INPUT</div>
-            <h2>Analyze an incident</h2>
+            <h2>Analyze a real incident</h2>
           </div>
-          <span class="live-pill"><i></i> LOCAL ANALYSIS</span>
+          <span class="live-pill"><i></i> LOCAL PIPELINE</span>
         </div>
-        <form id="analysis-form">
+        <form id="investigation-form">
           <div class="grid two">
             <label>Git repository path
               <input name="repo" required placeholder="/path/to/real/git/repository">
-              <small>Must be a local Git repository.</small>
+              <small>Must be inside the allowed workspace.</small>
             </label>
             <label>Environment
               <select name="environment" required>
@@ -54,50 +55,218 @@
           </div>
           <div class="form-footer">
             <label class="check"><input type="checkbox" name="no_diff"> Skip Git diff collection</label>
-            <button type="submit" id="submit-button"><span>Run analysis</span><b>→</b></button>
+            <button type="submit" id="submit-button"><span>Run investigation</span><b>→</b></button>
           </div>
         </form>
         <div id="status" class="status" hidden></div>
       </section>
 
-      <section id="results" hidden>
-        <div class="result-banner">
-          <div><div class="eyebrow">ANALYSIS COMPLETE</div><strong id="incident-id"></strong></div>
-          <span id="environment-badge"></span>
+      <!-- ============== Incident list ============== -->
+      <section class="panel" id="incidents-panel">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">INCIDENTS</div>
+            <h2>Recent investigations</h2>
+          </div>
+          <span id="incidents-count" class="muted">—</span>
         </div>
+        <div id="incidents-list" class="incident-list">
+          <div class="empty">Loading investigations…</div>
+        </div>
+      </section>
+
+      <!-- ============== Investigation detail ============== -->
+      <section id="investigation-detail" hidden>
+        <div class="result-banner">
+          <div>
+            <div class="eyebrow">INVESTIGATION</div>
+            <strong id="detail-id">—</strong>
+          </div>
+          <button class="ghost" id="close-detail">Close ✕</button>
+        </div>
+
+        <!-- Overview / Severity / Root cause -->
         <div class="panel deterministic">
           <div class="section-heading compact">
             <div>
               <div class="label deterministic-label">DETERMINISTIC RESULT</div>
-              <h2>Root cause decision</h2>
+              <h2 id="detail-root-cause">—</h2>
             </div>
-            <div class="confidence"><span id="confidence-value">—</span><small>confidence</small></div>
+            <div class="confidence"><span id="detail-confidence">—</span><small>confidence</small></div>
           </div>
-          <div class="root-cause" id="root-cause">—</div>
           <div class="metrics">
-            <div><span>SEVERITY</span><strong id="severity">—</strong></div>
-            <div><span>RELATED COMMIT</span><strong id="commit-sha">—</strong></div>
-            <div><span>REPOSITORY</span><strong id="repository">—</strong></div>
-          </div>
-          <div class="evidence-block">
-            <div class="label">SUPPORTING EVIDENCE</div>
-            <div id="evidence-list" class="evidence-list"></div>
+            <div><span>SEVERITY</span><strong id="detail-severity">—</strong></div>
+            <div><span>FAILURE TYPE</span><strong id="detail-failure-type">—</strong></div>
+            <div><span>RELATED COMMIT</span><strong id="detail-commit-sha">—</strong></div>
+            <div><span>REPOSITORY</span><strong id="detail-repository">—</strong></div>
+            <div><span>ENVIRONMENT</span><strong id="detail-environment">—</strong></div>
+            <div><span>BRANCH</span><strong id="detail-branch">—</strong></div>
           </div>
         </div>
-        <div class="panel ai-panel">
+
+        <!-- Why this is the root cause -->
+        <div class="panel">
           <div class="section-heading compact">
             <div>
-              <div class="label ai-label">AI-GENERATED EXPLANATION</div>
-              <h2>What happened and what to do</h2>
+              <div class="label">WHY AUTORCA BELIEVES THIS</div>
+              <h2>Reasoning chain</h2>
             </div>
-            <span class="ai-mark">✦</span>
           </div>
-          <div class="ai-grid">
-            <div><div class="label">EXPLANATION</div><p id="explanation"></p><p class="reasoning" id="reasoning"></p></div>
-            <div class="fix-card"><div class="label">RECOMMENDED FIX</div><h3 id="fix-description"></h3><ol id="fix-steps"></ol></div>
+          <div id="detail-reasoning-chain" class="reasoning-chain">
+            <div class="empty">No reasoning chain available.</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab active" data-tab="overview">Overview</button>
+          <button class="tab" data-tab="evidence">Evidence</button>
+          <button class="tab" data-tab="timeline">Timeline</button>
+          <button class="tab" data-tab="graph">Incident graph</button>
+          <button class="tab" data-tab="hypothesis">Hypotheses</button>
+          <button class="tab" data-tab="remediation">Remediation</button>
+          <button class="tab" data-tab="raw">Raw data</button>
+        </div>
+
+        <div class="tab-panels">
+          <div class="tab-panel active" data-tab="overview">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">FINGERPRINT</div>
+                  <h2>Incident fingerprint</h2>
+                </div>
+              </div>
+              <div class="metrics">
+                <div><span>CATEGORY</span><strong id="fp-category">—</strong></div>
+                <div><span>TYPE</span><strong id="fp-type">—</strong></div>
+                <div><span>EXCEPTION</span><strong id="fp-exception">—</strong></div>
+                <div><span>SERVICE</span><strong id="fp-service">—</strong></div>
+                <div><span>STAGE</span><strong id="fp-stage">—</strong></div>
+                <div><span>CONFIG AREA</span><strong id="fp-config-area">—</strong></div>
+                <div><span>CHANGE TYPE</span><strong id="fp-change">—</strong></div>
+                <div><span>RUNTIME</span><strong id="fp-runtime">—</strong></div>
+              </div>
+              <div class="signature-list" id="fp-signature"></div>
+            </div>
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">CORRELATION</div>
+                  <h2>Evidence correlation</h2>
+                </div>
+              </div>
+              <div id="correlation-list" class="correlation-list">
+                <div class="empty">No correlations detected.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="evidence">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">EVIDENCE EXPLORER</div>
+                  <h2>Supporting & contradicting evidence</h2>
+                </div>
+              </div>
+              <div id="evidence-explorer" class="evidence-explorer">
+                <div class="empty">No evidence recorded.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="timeline">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">TIMELINE</div>
+                  <h2>Incident timeline</h2>
+                </div>
+                <span id="timeline-status" class="muted">—</span>
+              </div>
+              <div id="timeline-list" class="timeline-list">
+                <div class="empty">No timeline events.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="graph">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">INCIDENT GRAPH</div>
+                  <h2>Causal graph</h2>
+                </div>
+                <span id="graph-status" class="muted">—</span>
+              </div>
+              <div id="graph-canvas" class="graph-canvas">
+                <div class="empty">Graph not available.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="hypothesis">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">HYPOTHESES</div>
+                  <h2>Deterministic scoring</h2>
+                </div>
+              </div>
+              <div id="hypothesis-list" class="hypothesis-list">
+                <div class="empty">No hypotheses.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="remediation">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">REMEDIATION</div>
+                  <h2>Recommended action</h2>
+                </div>
+              </div>
+              <div id="remediation-content">
+                <div class="empty">No remediation available.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="raw">
+            <div class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <div class="label">RAW DATA</div>
+                  <h2>Complete investigation payload</h2>
+                </div>
+              </div>
+              <details class="raw-details">
+                <summary>Observations</summary>
+                <pre id="raw-observations"></pre>
+              </details>
+              <details class="raw-details">
+                <summary>Fingerprint</summary>
+                <pre id="raw-fingerprint"></pre>
+              </details>
+              <details class="raw-details">
+                <summary>Correlation</summary>
+                <pre id="raw-correlation"></pre>
+              </details>
+              <details class="raw-details">
+                <summary>Graph</summary>
+                <pre id="raw-graph"></pre>
+              </details>
+              <details class="raw-details">
+                <summary>Complete payload</summary>
+                <pre id="raw-payload"></pre>
+              </details>
+            </div>
           </div>
         </div>
       </section>
+
       <footer>AutoRCA <span>•</span> AI explains the decision. AI does not make the decision.</footer>
     </main>
     <script src="/app.js"></script>

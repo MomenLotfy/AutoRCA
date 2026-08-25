@@ -70,6 +70,24 @@
       "produces_failure_type_id": "FT001",
       "classification_method": "rule",
       "description": "أي KeyError يظهر داخل سجل CI يُصنَّف مباشرة كدليل على متغير بيئة مفقود."
+    },
+    {
+      "id": "CR008",
+      "observation_kind": "module_not_found_error",
+      "source": "docker_output",
+      "conditions": [],
+      "produces_failure_type_id": "FT002",
+      "classification_method": "rule",
+      "description": "أي ModuleNotFoundError يظهر داخل مخرجات Docker (traceback التطبيق في stdout/stderr للـ container) يُصنَّف مباشرة كدليل على اعتماد مفقود."
+    },
+    {
+      "id": "CR009",
+      "observation_kind": "module_not_found_error",
+      "source": "ci_log",
+      "conditions": [],
+      "produces_failure_type_id": "FT002",
+      "classification_method": "rule",
+      "description": "أي ModuleNotFoundError يظهر داخل سجل CI يُصنَّف مباشرة كدليل على اعتماد مفقود."
     }
   ],
 
@@ -87,7 +105,9 @@
       "CR003": 0.35,
       "CR004": 0.35,
       "CR006": 0.35,
-      "CR007": 0.35
+      "CR007": 0.35,
+      "CR008": 0.35,
+      "CR009": 0.35
     }
   },
 

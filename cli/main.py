@@ -62,6 +62,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Generate and validate a real LLM explanation; requires LLM environment variables.",
     )
+    analyze.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit a structured JSON RCA result including timeline, correlation, graph, fingerprint, remediation.",
+    )
 
     return parser
 
@@ -164,6 +169,27 @@ def run_analyze(args: argparse.Namespace) -> int:
     confidence = None
     if result.selected:
         confidence = pipeline.compute_confidence(result.selected.score)
+
+    if args.json:
+        payload = {
+            "analysis_id": result.analysis_id,
+            "commit_sha": commit_sha,
+            "branch": branch,
+            "environment": args.environment,
+            "selected_hypothesis": result.selected.to_dict() if result.selected else None,
+            "confidence": confidence,
+            "observations": [o.to_dict() for o in result.observations],
+            "evidence": result.evidence_list,
+            "all_hypotheses": [h.to_dict() for h in result.hypotheses],
+            "timeline": result.timeline.to_dict() if result.timeline else None,
+            "correlation": result.correlation.to_dict() if result.correlation else None,
+            "graph": result.graph.to_dict() if result.graph else None,
+            "fingerprint": result.fingerprint.to_dict() if result.fingerprint else None,
+            "remediation": result.remediation.to_dict() if result.remediation else None,
+            "hypothesis_assessment": result.hypothesis_assessment.to_dict() if result.hypothesis_assessment else None,
+        }
+        print(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
+        return 0 if result.selected else 2
 
     renderer = IncidentReportRenderer(fix_hints=pipeline._rules_config.fix_hints)
     report = renderer.render(result, commit_sha=commit_sha, confidence=confidence)
