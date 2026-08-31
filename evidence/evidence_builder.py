@@ -55,23 +55,63 @@ class EvidenceBuilder:
                 )
 
             evidence_list.append(
-                {
-                    "id": id_generator.next_id(),
-                    "analysis_id": analysis_id,
-                    "schema_version": 1,
-                    "observation_id": observation.id,
-                    "failure_type_id": failure_type_id,
-                    "classification_rule_id": matching_rule["id"],
-                    "type": taxonomy_entry["type"],
-                    "source": observation.source,
-                    "classification_method": matching_rule["classification_method"],
-                    "producer_id": PRODUCER_ID,
-                    "producer_version": PRODUCER_VERSION,
-                    "data": dict(observation.data),
-                    "raw_reference": observation.raw_reference,
-                    "extracted_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-                }
+                self._build_evidence_dict(
+                    id_generator=id_generator,
+                    analysis_id=analysis_id,
+                    observation=observation,
+                    matching_rule=matching_rule,
+                    failure_type_id=failure_type_id,
+                    taxonomy_entry=taxonomy_entry,
+                )
             )
+
+        return evidence_list
+
+    def _build_evidence_dict(
+        self,
+        *,
+        id_generator: EvidenceIdGenerator,
+        analysis_id: str,
+        observation: Observation,
+        matching_rule: dict,
+        failure_type_id: str,
+        taxonomy_entry: dict,
+    ) -> Dict[str, object]:
+        # Phase 0 schema (v1) — exact same keys as before so the existing
+        # evidence.schema.json validator still passes. Evidence-Model V2
+        # fields are only attached when the source Observation carries them.
+        record: Dict[str, object] = {
+            "id": id_generator.next_id(),
+            "analysis_id": analysis_id,
+            "schema_version": 1,
+            "observation_id": observation.id,
+            "failure_type_id": failure_type_id,
+            "classification_rule_id": matching_rule["id"],
+            "type": taxonomy_entry["type"],
+            "source": observation.source,
+            "classification_method": matching_rule["classification_method"],
+            "producer_id": PRODUCER_ID,
+            "producer_version": PRODUCER_VERSION,
+            "data": dict(observation.data),
+            "raw_reference": observation.raw_reference,
+            "extracted_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+
+        # Evidence-Model V2 — additive, optional. Skipping when None keeps the
+        # exact Phase-0 byte shape, which is what the existing schema and
+        # baseline tests expect.
+        if observation.service is not None:
+            record["service"] = observation.service
+        if observation.resource is not None:
+            record["resource"] = observation.resource
+        if observation.normalized_value is not None:
+            record["normalized_value"] = observation.normalized_value
+        # `extracted_at` is already in the record; here we surface the
+        # Observation-level `timestamp_known` flag (False when we could not
+        # verify a real timestamp).
+        if not observation.timestamp_known:
+            record["timestamp_known"] = observation.timestamp_known
+        return record
 
         return evidence_list
 

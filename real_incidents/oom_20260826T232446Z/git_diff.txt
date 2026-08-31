@@ -1,0 +1,12 @@
+diff --git a/real_incident_traceback.txt b/real_incident_traceback.txt
+new file mode 100644
+index 0000000..163c03c
+--- /dev/null
++++ b/real_incident_traceback.txt
+@@ -0,0 +1,6 @@
++Traceback (most recent call last):
++  File "<string>", line 1, in <module>
++    import os; os.environ.pop('DOCKER_DATABASE_URL', None); x = os.environ['DOCKER_DATABASE_URL']
++                                                                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
++  File "<frozen os>", line 709, in __getitem__
++KeyError: 'DOCKER_DATABASE_URL'

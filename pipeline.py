@@ -24,6 +24,64 @@ import extractors.missing_env_extractor  # noqa: F401
 import extractors.missing_dependency_extractor  # noqa: F401
 import extractors.port_conflict_extractor  # noqa: F401
 import extractors.diff_extractor  # noqa: F401
+import extractors.docker_event_extractor  # noqa: F401
+import extractors.docker_metrics_extractor  # noqa: F401
+import extractors.host_metrics_extractor  # noqa: F401
+import extractors.elasticsearch_extractor  # noqa: F401
+import extractors.prometheus_extractor  # noqa: F401
+import extractors.github_change_extractor  # noqa: F401
+import extractors.gitlab_change_extractor  # noqa: F401
+import extractors.kubernetes_extractor  # noqa: F401
+import extractors.cicd_extractor  # noqa: F401
+
+
+def _filter_observations_by_window(
+    observations: List[Observation],
+    *,
+    start: Optional[dt.datetime],
+    end: Optional[dt.datetime],
+) -> List[Observation]:
+    """Filter Observations whose `extracted_at` lies outside [start, end].
+
+    If `start` or `end` is None, that side is unbounded.
+
+    Observations without a parseable `extracted_at` are kept ONLY when the
+    window is fully unbounded. As soon as at least one bound is set, we
+    cannot prove an unparseable observation belongs in the window, so it
+    is dropped (this matches the Architecture Freeze rule: never
+    fabricate timestamps).
+    """
+    fully_bounded = start is not None and end is not None
+    keep_unknown = not fully_bounded
+
+    if start is None and end is None:
+        return list(observations)
+
+    out: List[Observation] = []
+    for obs in observations:
+        ts = _parse_extracted_at(obs.extracted_at)
+        if ts is None:
+            if keep_unknown:
+                out.append(obs)
+            continue
+        if start is not None and ts < start:
+            continue
+        if end is not None and ts > end:
+            continue
+        out.append(obs)
+    return out
+
+
+def _parse_extracted_at(value: str) -> Optional[dt.datetime]:
+    if not value or not isinstance(value, str):
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        return dt.datetime.fromisoformat(text)
+    except ValueError:
+        return None
 
 
 class PipelineConfigError(ValueError):
@@ -36,6 +94,15 @@ class PipelineInput:
     sources: Dict[str, str]
     environment: str = "unknown"
     commit_sha: Optional[str] = None
+    # Phase 1.5 — optional IncidentContext fields. All default to None so
+    # existing callers that construct PipelineInput(positionally or with
+    # keywords) continue to work. When set, observations whose
+    # extracted_at falls outside the window are filtered out at the
+    # pipeline boundary (the protected TimelineEngine is untouched).
+    incident_start: Optional[dt.datetime] = None
+    incident_end: Optional[dt.datetime] = None
+    service: Optional[str] = None
+    deployment: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -206,6 +273,21 @@ class AnalysisPipeline:
             for extractor_cls in extractor_classes:
                 extractor = extractor_cls()
                 all_observations.extend(extractor.extract(context))
+
+        # Phase 1.5 — IncidentContext time-window filter applied at the
+        # pipeline boundary so the protected TimelineEngine stays untouched.
+        # Observations whose extracted_at falls outside the window are
+        # dropped (we never fabricate timestamps). When the window is
+        # unbounded on either side, all observations pass.
+        if (
+            pipeline_input.incident_start is not None
+            or pipeline_input.incident_end is not None
+        ):
+            all_observations = _filter_observations_by_window(
+                all_observations,
+                start=pipeline_input.incident_start,
+                end=pipeline_input.incident_end,
+            )
 
         return all_observations
 

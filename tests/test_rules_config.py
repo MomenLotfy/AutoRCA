@@ -31,7 +31,10 @@ def valid_raw_config() -> dict:
 def test_valid_config_loads_successfully(valid_raw_config):
     config = RulesConfig.from_dict(valid_raw_config)
     assert config.config_id == "rules-config-v1"
-    assert len(config.hypotheses_catalog) == 3
+    # Phase 1 — additive: RC_resource_exhaustion (FT011) added.
+    assert len(config.hypotheses_catalog) == 4
+    assert "RC_resource_exhaustion" in config.hypotheses_catalog
+    assert config.hypotheses_catalog["RC_resource_exhaustion"]["failure_type_id"] == "FT011"
 
 
 def test_from_file_loads_the_real_project_config():

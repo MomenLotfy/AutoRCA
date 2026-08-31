@@ -1,0 +1,307 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: DEVOPS INCIDENT INTELLIGENCE
+    - heading "AutoRCA" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Evidence-based root cause analysis. Deterministic decisions, AI-powered explanations.
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: REAL INCIDENT INPUT
+        - heading "Analyze a real incident" [level=2] [ref=e11]
+      - generic [ref=e12]: LOCAL PIPELINE
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: Git repository path
+          - textbox "Git repository path Must be inside the allowed workspace." [ref=e17]:
+            - /placeholder: /path/to/real/git/repository
+            - text: /home/moamen-lotfy/Desktop/AutoRCA/projects-for-test/python-fastapi-demo-docker
+          - generic [ref=e18]: Must be inside the allowed workspace.
+        - generic [ref=e19]:
+          - text: Environment
+          - combobox "Environment" [ref=e20]:
+            - option "Production" [selected]
+            - option "Staging"
+            - option "Local"
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - text: Traceback / log file
+          - generic [ref=e23]: optional
+          - textbox "Traceback / log file optional" [ref=e24]:
+            - /placeholder: /path/to/real/traceback.txt
+            - text: /home/moamen-lotfy/Desktop/AutoRCA/projects-for-test/real_incident_traceback.txt
+        - generic [ref=e25]:
+          - text: Commit SHA
+          - generic [ref=e26]: optional
+          - textbox "Commit SHA optional" [ref=e27]:
+            - /placeholder: Defaults to latest commit
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - text: Repository name
+          - generic [ref=e30]: optional
+          - textbox "Repository name optional" [ref=e31]:
+            - /placeholder: org/repository
+        - generic [ref=e32]:
+          - text: CI / Docker log file
+          - generic [ref=e33]: optional
+          - textbox "CI / Docker log file optional" [ref=e34]:
+            - /placeholder: /path/to/real/ci.log
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - text: Elasticsearch URL
+          - generic [ref=e37]: optional — Phase 2.1
+          - textbox "Elasticsearch URL optional — Phase 2.1 http(s) URL only. No embedded credentials." [ref=e38]:
+            - /placeholder: https://es.example.com:9200
+          - generic [ref=e39]: http(s) URL only. No embedded credentials.
+        - generic [ref=e40]:
+          - text: Elasticsearch index pattern
+          - generic [ref=e41]: optional
+          - textbox "Elasticsearch index pattern optional" [ref=e42]:
+            - /placeholder: logs-*
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - text: Elasticsearch service filter
+          - generic [ref=e45]: optional
+          - textbox "Elasticsearch service filter optional" [ref=e46]:
+            - /placeholder: payment-api
+        - generic [ref=e47]:
+          - text: Elasticsearch size
+          - generic [ref=e48]: optional
+          - spinbutton "Elasticsearch size optional" [ref=e49]
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - text: Prometheus URL
+          - generic [ref=e52]: optional — Phase 2.2
+          - textbox "Prometheus URL optional — Phase 2.2 http(s) URL of the Prometheus HTTP API." [ref=e53]:
+            - /placeholder: https://prom.example.com
+          - generic [ref=e54]: http(s) URL of the Prometheus HTTP API.
+        - generic [ref=e55]:
+          - text: Prometheus query (PromQL)
+          - generic [ref=e56]: optional
+          - textbox "Prometheus query (PromQL) optional" [ref=e57]:
+            - /placeholder: rate(http_requests_total[5m])
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - text: GitHub repo
+          - generic [ref=e60]: optional — Phase 2.2
+          - textbox "GitHub repo optional — Phase 2.2 e.g. owner/repo." [ref=e61]:
+            - /placeholder: octocat/Hello-World
+          - generic [ref=e62]: e.g. owner/repo.
+        - generic [ref=e63]:
+          - text: GitLab project
+          - generic [ref=e64]: optional
+          - textbox "GitLab project optional Use the full GitLab project path." [ref=e65]:
+            - /placeholder: mygroup/mysubgroup/project
+          - generic [ref=e66]: Use the full GitLab project path.
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - text: Kubernetes API URL
+          - generic [ref=e69]: optional — Phase 2.3
+          - textbox "Kubernetes API URL optional — Phase 2.3 Read-only API; bearer token via env var." [ref=e70]:
+            - /placeholder: https://kubernetes.default.svc
+          - generic [ref=e71]: Read-only API; bearer token via env var.
+        - generic [ref=e72]:
+          - text: Kubernetes namespace
+          - generic [ref=e73]: optional
+          - textbox "Kubernetes namespace optional Use \"all-namespaces\" to span all reachable namespaces." [ref=e74]:
+            - /placeholder: default
+          - generic [ref=e75]: Use "all-namespaces" to span all reachable namespaces.
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - text: GitHub Actions repo
+          - generic [ref=e78]: optional — Phase 2.3
+          - textbox "GitHub Actions repo optional — Phase 2.3 owner/repo for workflow runs." [ref=e79]:
+            - /placeholder: octocat/Hello-World
+          - generic [ref=e80]: owner/repo for workflow runs.
+        - generic [ref=e81]:
+          - text: GitLab CI project
+          - generic [ref=e82]: optional
+          - textbox "GitLab CI project optional Full project path for GitLab CI pipelines." [ref=e83]:
+            - /placeholder: mygroup/mysubgroup/project
+          - generic [ref=e84]: Full project path for GitLab CI pipelines.
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - text: Jenkins job
+          - generic [ref=e87]: optional — Phase 2.3
+          - textbox "Jenkins job optional — Phase 2.3 Folder/job path on the Jenkins controller." [ref=e88]:
+            - /placeholder: my-folder/my-pipeline
+          - generic [ref=e89]: Folder/job path on the Jenkins controller.
+        - generic [ref=e90]:
+          - text: Incident window start
+          - generic [ref=e91]: optional
+          - textbox "Incident window start optional Applied to all enabled integrations." [ref=e92]:
+            - /placeholder: 2026-08-27T10:00
+          - generic [ref=e93]: Applied to all enabled integrations.
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - text: Incident window end
+          - generic [ref=e96]: optional
+          - textbox "Incident window end optional End of the requested incident window." [ref=e97]:
+            - /placeholder: 2026-08-27T11:00
+          - generic [ref=e98]: End of the requested incident window.
+        - generic [ref=e99]:
+          - text: Service name
+          - generic [ref=e100]: optional
+          - textbox "Service name optional Hint propagated to every integration." [ref=e101]:
+            - /placeholder: payment-api
+          - generic [ref=e102]: Hint propagated to every integration.
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - checkbox "Skip Git diff collection" [ref=e105]
+          - text: Skip Git diff collection
+        - button "Run investigation →" [ref=e106] [cursor=pointer]:
+          - generic [ref=e107]: Run investigation
+          - generic [ref=e108]: →
+  - generic [ref=e109]:
+    - generic [ref=e110]:
+      - generic [ref=e111]:
+        - generic [ref=e112]: INCIDENTS
+        - heading "Recent investigations" [level=2] [ref=e113]
+      - generic [ref=e114]: 1 incident
+    - generic [ref=e118] [cursor=pointer]:
+      - generic [ref=e119]: CRITICAL
+      - generic [ref=e120]:
+        - generic [ref=e121]: missing_environment_variable
+        - generic [ref=e122]: python-fastapi-demo-docker · production · main
+      - generic [ref=e123]: FT001
+      - generic [ref=e124]: completed
+      - generic [ref=e125]:
+        - text: 55%
+        - generic [ref=e126]: confidence
+  - generic [ref=e127]:
+    - generic [ref=e128]:
+      - generic [ref=e129]:
+        - generic [ref=e130]: INVESTIGATION
+        - strong [ref=e131]: INV-6BF645DF58C1
+      - button "Close ✕" [ref=e132] [cursor=pointer]
+    - generic [ref=e133]:
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136]: DETERMINISTIC RESULT
+          - heading "missing_environment_variable" [level=2] [ref=e137]
+        - generic [ref=e138]:
+          - text: 55%
+          - generic [ref=e139]: confidence
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - generic [ref=e142]: SEVERITY
+          - strong [ref=e143]: CRITICAL
+        - generic [ref=e144]:
+          - generic [ref=e145]: FAILURE TYPE
+          - strong [ref=e146]: FT001
+        - generic [ref=e147]:
+          - generic [ref=e148]: RELATED COMMIT
+          - strong [ref=e149]: f850c3a9abe891a…
+        - generic [ref=e150]:
+          - generic [ref=e151]: REPOSITORY
+          - strong [ref=e152]: python-fastapi-demo-docker
+        - generic [ref=e153]:
+          - generic [ref=e154]: ENVIRONMENT
+          - strong [ref=e155]: PRODUCTION
+        - generic [ref=e156]:
+          - generic [ref=e157]: BRANCH
+          - strong [ref=e158]: main
+    - generic [ref=e159]:
+      - generic [ref=e161]:
+        - generic [ref=e162]: WHY AUTORCA BELIEVES THIS
+        - heading "Reasoning chain" [level=2] [ref=e163]
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]: "1"
+          - generic [ref=e167]:
+            - strong [ref=e168]: KeyError raised at runtime
+            - text: "KeyError: 'DOCKER_DATABASE_URL'"
+        - generic [ref=e169]:
+          - generic [ref=e170]: "2"
+          - generic [ref=e171]:
+            - strong [ref=e172]: Application startup failure
+            - text: "Failure stage: traceback"
+        - generic [ref=e173]:
+          - generic [ref=e174]: "3"
+          - generic [ref=e175]:
+            - strong [ref=e176]: "Root cause: missing_environment_variable"
+            - text: RC1 · FT001 · score 0.550
+    - generic [ref=e177]:
+      - button "Overview" [ref=e178] [cursor=pointer]
+      - button "Evidence" [ref=e179] [cursor=pointer]
+      - button "Timeline" [ref=e180] [cursor=pointer]
+      - button "Incident graph" [ref=e181] [cursor=pointer]
+      - button "Hypotheses" [ref=e182] [cursor=pointer]
+      - button "Remediation" [ref=e183] [cursor=pointer]
+      - button "Raw data" [ref=e184] [cursor=pointer]
+    - generic [ref=e186]:
+      - generic [ref=e187]:
+        - generic [ref=e189]:
+          - generic [ref=e190]: FINGERPRINT
+          - heading "Incident fingerprint" [level=2] [ref=e191]
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - generic [ref=e194]: CATEGORY
+            - strong [ref=e195]: environment
+          - generic [ref=e196]:
+            - generic [ref=e197]: TYPE
+            - strong [ref=e198]: FT001
+          - generic [ref=e199]:
+            - generic [ref=e200]: EXCEPTION
+            - strong [ref=e201]: KeyError
+          - generic [ref=e202]:
+            - generic [ref=e203]: SERVICE
+            - strong [ref=e204]: unknown
+          - generic [ref=e205]:
+            - generic [ref=e206]: STAGE
+            - strong [ref=e207]: traceback
+          - generic [ref=e208]:
+            - generic [ref=e209]: CONFIG AREA
+            - strong [ref=e210]: env_file
+          - generic [ref=e211]:
+            - generic [ref=e212]: CHANGE TYPE
+            - strong [ref=e213]: unknown
+          - generic [ref=e214]:
+            - generic [ref=e215]: RUNTIME
+            - strong [ref=e216]: python
+        - generic [ref=e217]:
+          - generic [ref=e218]: FT001
+          - generic [ref=e219]: KeyError
+          - generic [ref=e220]: env:DOCKER_DATABASE_URL
+      - generic [ref=e221]:
+        - generic [ref=e223]:
+          - generic [ref=e224]: CORRELATION
+          - heading "Evidence correlation" [level=2] [ref=e225]
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - code [ref=e228]: O1
+            - generic [ref=e229]: occurred_before
+            - code [ref=e230]: O2
+            - generic [ref=e231]: Observation O1 (extracted_at=2026-08-31T01:09:33.616336+00:…
+            - generic [ref=e232]: "1.00"
+          - generic [ref=e233]:
+            - code [ref=e234]: O2
+            - generic [ref=e235]: occurred_before
+            - code [ref=e236]: O3
+            - generic [ref=e237]: Observation O2 (extracted_at=2026-08-31T01:09:33.616934+00:…
+            - generic [ref=e238]: "1.00"
+          - generic [ref=e239]:
+            - code [ref=e240]: O3
+            - generic [ref=e241]: occurred_before
+            - code [ref=e242]: O4
+            - generic [ref=e243]: Observation O3 (extracted_at=2026-08-31T01:09:33.617014+00:…
+            - generic [ref=e244]: "1.00"
+          - generic [ref=e245]:
+            - code [ref=e246]: O4
+            - generic [ref=e247]: occurred_before
+            - code [ref=e248]: O5
+            - generic [ref=e249]: Observation O4 (extracted_at=2026-08-31T01:09:33.617063+00:…
+            - generic [ref=e250]: "1.00"
+          - generic [ref=e251]:
+            - code [ref=e252]: O5
+            - generic [ref=e253]: occurred_before
+            - code [ref=e254]: O6
+            - generic [ref=e255]: Observation O5 (extracted_at=2026-08-31T01:09:33.617187+00:…
+            - generic [ref=e256]: "1.00"
+          - generic [ref=e257]:
+            - code [ref=e258]: O6
+            - generic [ref=e259]: occurred_before
+            - code [ref=e260]: O7
+            - generic [ref=e261]: Observation O6 (extracted_at=2026-08-31T01:09:33.617234+00:…
+            - generic [ref=e262]: "1.00"
+  - generic [ref=e117]: AutoRCA • AI explains the decision. AI does not make the decision.

@@ -141,9 +141,14 @@ def investigation_payload(
     fingerprint: Optional[IncidentFingerprint],
     remediation: Optional[RemediationContext],
     hypothesis_assessment: Optional[HypothesisAssessmentResult],
+    elasticsearch: Optional[Dict[str, Any]] = None,
+    prometheus: Optional[Dict[str, Any]] = None,
+    github_changes: Optional[Dict[str, Any]] = None,
+    gitlab_changes: Optional[Dict[str, Any]] = None,
+    integrations: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Build the canonical investigation payload from pipeline output."""
-    return {
+    payload: Dict[str, Any] = {
         "investigation_id": investigation_id,
         "status": status,
         "created_at": created_at,
@@ -172,3 +177,17 @@ def investigation_payload(
         "hypothesis_assessment": serialise_assessment(hypothesis_assessment),
         "generated_at": _now_iso(),
     }
+    if elasticsearch is not None:
+        payload["elasticsearch"] = _safe(elasticsearch)
+    if prometheus is not None:
+        payload["prometheus"] = _safe(prometheus)
+    if github_changes is not None:
+        payload["github_changes"] = _safe(github_changes)
+    if gitlab_changes is not None:
+        payload["gitlab_changes"] = _safe(gitlab_changes)
+    if integrations is not None:
+        # Per-source status / error / metadata for Phase 2.3. Always
+        # serialised when present so the UI can show which integrations
+        # failed and why (failure isolation).
+        payload["integrations"] = _safe(integrations)
+    return payload

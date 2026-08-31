@@ -1,0 +1,1 @@
+[{"type": "container_metrics", "container": "autorca-oom-test", "container_id": "050cd91a6f96", "cpu_percent": 0.0, "mem_usage_bytes": 0, "mem_limit_bytes": 0, "mem_percent": 0.0, "net_rx_bytes": 0, "net_tx_bytes": 0, "block_read_bytes": 0, "block_write_bytes": 0, "pids": 0, "restart_count": 0, "state": "exited", "timestamp": "2026-08-26T23:20:37.037651+00:00"}]

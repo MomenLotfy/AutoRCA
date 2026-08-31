@@ -48,11 +48,14 @@ from typing import Dict, List, Optional, Tuple
 
 from config.rules_config import RulesConfig
 from engine.rule_engine import Hypothesis, HypothesisLink, RuleEngine
-from engine.scoring_engine import ScoringEngine
+from engine.scoring_engine import ExplainableConfidence, ScoringEngine
 from extractors.base import Observation
 
 
 VALID_RELATIONS: tuple[str, ...] = ("supports", "contradicts")
+
+# Phase 1.7 — أدوار الأدلة المؤيدة ضمن hypothesis معيّن.
+VALID_EVIDENCE_ROLES: tuple[str, ...] = ("root_cause", "contributing_factor", "symptom")
 
 
 class HypothesisEngineError(ValueError):
@@ -76,6 +79,11 @@ class HypothesisAssessment:
     related_changes: List[str]  # commit SHAs
     selection_rationale: str
     links: List[HypothesisLink]
+    # Phase 1.7 — evidence role mapping (evidence_id → root_cause | contributing_factor | symptom).
+    # Always emitted (default empty dict) for backward-compat with to_dict consumers.
+    evidence_roles: Dict[str, str] = field(default_factory=dict)
+    # Phase 1.8 — explainable confidence breakdown.
+    confidence_breakdown: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -94,6 +102,8 @@ class HypothesisAssessment:
             "related_changes": list(self.related_changes),
             "selection_rationale": self.selection_rationale,
             "links": [{"evidence_id": l.evidence_id, "relation": l.relation} for l in self.links],
+            "evidence_roles": dict(self.evidence_roles),
+            "confidence_breakdown": dict(self.confidence_breakdown),
         }
 
 
@@ -123,6 +133,18 @@ _PORT_SUCCESS_HINTS = (
     re.compile(r"Listening on", re.IGNORECASE),
     re.compile(r"started server process", re.IGNORECASE),
 )
+_OOM_HINTS = (
+    re.compile(r"OOMKilled", re.IGNORECASE),
+    re.compile(r"MemoryError", re.IGNORECASE),
+    re.compile(r"out of memory", re.IGNORECASE),
+    re.compile(r"cannot allocate", re.IGNORECASE),
+    re.compile(r"oom", re.IGNORECASE),
+)
+_NONZERO_EXIT_HINTS = (
+    re.compile(r"exit code\s+(?!0\b)\d+", re.IGNORECASE),
+    re.compile(r"exited with status\s+(?!0\b)\d+", re.IGNORECASE),
+    re.compile(r"exit_code[^0-9-]+[1-9]\d*", re.IGNORECASE),
+)
 
 
 def _detect_port_success_from_logs(observations: List[Observation]) -> bool:
@@ -143,6 +165,77 @@ def _detect_port_failure_from_logs(observations: List[Observation]) -> bool:
             if pat.search(ref):
                 return True
     return False
+
+
+def _detect_oom_symptom_from_observations(observations: List[Observation]) -> bool:
+    """يكشف عن دلائل على أن العطل كان symptom لاستنزاف موارد الحاوية.
+
+    يستعمل في حساب `has_temporal_correlation / has_resource_correlation`.
+    """
+    for obs in observations:
+        ref = obs.raw_reference or ""
+        for pat in _OOM_HINTS:
+            if pat.search(ref):
+                return True
+    return False
+
+
+def _detect_nonzero_exit_from_observations(observations: List[Observation]) -> bool:
+    """يكشف عن دلائل exit code غير صفر كـ symptom عام."""
+    for obs in observations:
+        ref = obs.raw_reference or ""
+        for pat in _NONZERO_EXIT_HINTS:
+            if pat.search(ref):
+                return True
+    return False
+
+
+def _classify_evidence_role(
+    *,
+    failure_type_id: str,
+    evidence: dict,
+    obs_by_id: Dict[str, Observation],
+) -> str:
+    """Phase 1.7 — يحدد دور كل evidence_id ضمن hypothesis معيّن.
+
+    القواعد deterministic:
+      * root_cause: FT011 + container_metric evidence mem_percent>=95
+      * root_cause: FT011 + container_event event in {oom, kill, die, destroy}
+      * symptom:   evidence of container_event {die, destroy} for FT011
+      * symptom:   exit_code_nonzero / OOMKilled في الـ log
+      * contributing_factor: evidence مرتبطة بـ git diff (config change)
+      * contributing_factor: host_metrics memory pressure (مساهم لا سبب مباشر)
+      * contributing_factor: container_metrics restart_count
+      * الافتراضي: contributing_factor
+    """
+    obs_id = evidence.get("observation_id")
+    obs = obs_by_id.get(obs_id) if obs_id else None
+    if obs is None:
+        return "contributing_factor"
+
+    # Resource-exhaustion root cause
+    if failure_type_id == "FT011":
+        if obs.kind == "container_metrics":
+            mem_pct = obs.data.get("mem_percent")
+            if isinstance(mem_pct, (int, float)) and float(mem_pct) >= 85.0:
+                return "root_cause"
+        if obs.kind == "container_event":
+            event = str(obs.data.get("event") or "").lower()
+            if event in {"oom", "kill"}:
+                return "root_cause"
+            if event in {"die", "destroy"}:
+                return "symptom"
+        if obs.kind == "host_metrics":
+            return "contributing_factor"
+        if obs.kind == "diff_removed_line" or obs.kind == "diff_added_line":
+            return "contributing_factor"
+
+    # Generic symptom: nonzero exit / OOM in log
+    if obs.kind in {"exit_code_nonzero", "generic_log_line"}:
+        return "symptom"
+
+    # Default
+    return "contributing_factor"
 
 
 class HypothesisEngine:
@@ -275,14 +368,47 @@ class HypothesisEngine:
                 contradicting.append(eid)
                 links.append(HypothesisLink(evidence_id=eid, relation="contradicts"))
 
-        # تطبيق الـ penalty على score
+        # تطبيق الـ penalty على score (نفس منطق Phase 0 — لم يتغير)
         score = float(hypothesis.score)
         penalty = min(0.6, 0.2 * len(contradicting))
         if contradicting:
             score = max(self._clamp["min"], score - penalty)
             score = min(self._clamp["max"], score)
 
-        confidence = self._scoring_engine.compute_confidence(score)
+        # Phase 1.7 — evidence role classification (deterministic).
+        evidence_roles: Dict[str, str] = {}
+        for eid in supporting:
+            evidence = evidence_by_id.get(eid)
+            if evidence is None:
+                continue
+            role = _classify_evidence_role(
+                failure_type_id=hypothesis.failure_type_id,
+                evidence=evidence,
+                obs_by_id=obs_by_id,
+            )
+            evidence_roles[eid] = role
+
+        # Phase 1.8 — explainable confidence breakdown.
+        has_resource_correlation = any(
+            role == "root_cause" and hypothesis.failure_type_id == "FT011"
+            for role in evidence_roles.values()
+        )
+        has_temporal_correlation = (
+            hypothesis.failure_type_id == "FT011"
+            and (
+                _detect_oom_symptom_from_observations(observations=list(obs_by_id.values()))
+                or _detect_nonzero_exit_from_observations(observations=list(obs_by_id.values()))
+            )
+        )
+
+        explainable: ExplainableConfidence = self._scoring_engine.compute_explainable_confidence(
+            score,
+            matching_evidence_count=len(supporting),
+            has_temporal_correlation=has_temporal_correlation,
+            has_resource_correlation=has_resource_correlation,
+            contradiction_count=len(contradicting),
+        )
+        confidence = explainable.final_score
 
         # severity resolution
         default_severity = "medium"
@@ -307,6 +433,8 @@ class HypothesisEngine:
             contradicting=contradicting,
             score=score,
             penalty=penalty,
+            evidence_roles=evidence_roles,
+            explainable=explainable,
         )
 
         return HypothesisAssessment(
@@ -325,6 +453,8 @@ class HypothesisEngine:
             related_changes=related_changes,
             selection_rationale=rationale,
             links=links,
+            evidence_roles=evidence_roles,
+            confidence_breakdown=explainable.to_dict(),
         )
 
     def _detect_contradictions(
@@ -368,6 +498,8 @@ class HypothesisEngine:
         contradicting: List[str],
         score: float,
         penalty: float,
+        evidence_roles: Optional[Dict[str, str]] = None,
+        explainable: Optional[ExplainableConfidence] = None,
     ) -> str:
         parts = [
             f"Initial score from RuleEngine={hypothesis.score:.2f}.",
@@ -378,6 +510,22 @@ class HypothesisEngine:
                 f"Contradicting evidence count={len(contradicting)} -> penalty={penalty:.2f}."
             )
         parts.append(f"Final score={score:.2f}.")
+
+        # Phase 1.7 — list contributing factors and symptoms.
+        if evidence_roles:
+            role_buckets: Dict[str, List[str]] = {"root_cause": [], "contributing_factor": [], "symptom": []}
+            for eid, role in evidence_roles.items():
+                role_buckets.setdefault(role, []).append(eid)
+            for role, eids in role_buckets.items():
+                if eids:
+                    parts.append(f"{role}={','.join(eids)}.")
+
+        # Phase 1.8 — list confidence breakdown.
+        if explainable is not None:
+            parts.append(
+                f"confidence_breakdown={explainable.to_dict()}."
+            )
+
         return " ".join(parts)
 
     def _apply_decision_rules(
@@ -421,6 +569,8 @@ class HypothesisEngine:
                     related_changes=a.related_changes,
                     selection_rationale=a.selection_rationale,
                     links=a.links,
+                    evidence_roles=a.evidence_roles,
+                    confidence_breakdown=a.confidence_breakdown,
                 )
             )
         selected = next((r for r in result if r.status == "selected"), None)

@@ -1,0 +1,6 @@
+[
+{"type": "container_event", "event": "create", "container": "autorca-oom-test", "timestamp": 1787788813, "actor": {"com.docker.compose.project": "python-fastapi-demo-docker", "com.docker.compose.service": "web", "com.docker.compose.version": "2.40.3", "image": "fastapi-microservices:1.0", "name": "autorca-oom-test"}},
+{"type": "container_event", "event": "start", "container": "autorca-oom-test", "timestamp": 1787788814, "actor": {"com.docker.compose.project": "python-fastapi-demo-docker", "com.docker.compose.service": "web", "com.docker.compose.version": "2.40.3", "image": "fastapi-microservices:1.0", "name": "autorca-oom-test"}},
+{"type": "container_event", "event": "oom", "container": "autorca-oom-test", "timestamp": 1787788819, "actor": {"com.docker.compose.project": "python-fastapi-demo-docker", "com.docker.compose.service": "web", "com.docker.compose.version": "2.40.3", "image": "fastapi-microservices:1.0", "name": "autorca-oom-test"}},
+{"type": "container_event", "event": "die", "container": "autorca-oom-test", "timestamp": 1787788819, "actor": {"com.docker.compose.project": "python-fastapi-demo-docker", "com.docker.compose.service": "web", "com.docker.compose.version": "2.40.3", "execDuration": "5", "exitCode": "137", "image": "fastapi-microservices:1.0", "name": "autorca-oom-test"}}
+]

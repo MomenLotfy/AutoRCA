@@ -1,0 +1,1 @@
+[  461926ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:5000/api/v1/investigations:0

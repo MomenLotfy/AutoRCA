@@ -366,4 +366,6 @@ def test_service_persists_investigation(tmp_path, monkeypatch):
     items = service.list_investigations()
     assert any(item.investigation_id == investigation.investigation_id for item in items)
     again = service.get_investigation(investigation.investigation_id)
-    assert again is investigation
+    assert again.investigation_id == investigation.investigation_id
+    assert again.payload == investigation.payload
+    assert again.environment == investigation.environment

@@ -89,6 +89,114 @@ form.addEventListener("submit", async (event) => {
   const data = Object.fromEntries(new FormData(form).entries());
   data.no_diff = form.no_diff.checked;
 
+  // Phase 2.1 — only forward an elasticsearch block when the URL is set.
+  // This preserves Phase 1 behaviour when the field is empty.
+  const esUrl = (data.elasticsearch_url || "").trim();
+  if (esUrl) {
+    const esBlock = { url: esUrl };
+    const idx = (data.elasticsearch_index || "").trim();
+    if (idx) esBlock.index_pattern = idx;
+    const svc = (data.elasticsearch_service || "").trim();
+    if (svc) esBlock.service = svc;
+    const sz = parseInt(data.elasticsearch_size, 10);
+    if (Number.isFinite(sz) && sz > 0) esBlock.size = sz;
+    data.elasticsearch = esBlock;
+  }
+  delete data.elasticsearch_url;
+  delete data.elasticsearch_index;
+  delete data.elasticsearch_service;
+  delete data.elasticsearch_size;
+
+  // Phase 2.2 — only forward prometheus / github_changes / gitlab_changes
+  // blocks when their primary identifier is set. Empty blocks must not
+  // change the Phase 1 payload.
+  const promUrl = (data.prometheus_url || "").trim();
+  const promQuery = (data.prometheus_query || "").trim();
+  if (promUrl && promQuery) {
+    data.prometheus = { url: promUrl, query: promQuery };
+  }
+  delete data.prometheus_url;
+  delete data.prometheus_query;
+
+  const ghRepo = (data.github_repo || "").trim();
+  if (ghRepo) {
+    const ghBlock = { url: "https://api.github.com", resource: ghRepo };
+    data.github_changes = ghBlock;
+  }
+  delete data.github_repo;
+
+  const glProject = (data.gitlab_project || "").trim();
+  if (glProject) {
+    // Allow override via the same field; default to gitlab.com public
+    // API URL when the caller didn't supply one.
+    const glUrl = "https://gitlab.com";
+    data.gitlab_changes = { url: glUrl, resource: glProject };
+  }
+  delete data.gitlab_project;
+
+  // Phase 2.3 — Kubernetes + CI/CD integrations. Each block is only
+  // forwarded when its primary identifier is set; absence preserves
+  // Phase 1 behaviour exactly.
+  const k8sUrl = (data.kubernetes_url || "").trim();
+  const k8sNs = (data.kubernetes_namespace || "").trim();
+  if (k8sUrl && k8sNs) {
+    data.kubernetes = { url: k8sUrl, resource: k8sNs };
+  }
+  delete data.kubernetes_url;
+  delete data.kubernetes_namespace;
+
+  const ghActionsRepo = (data.github_actions_repo || "").trim();
+  if (ghActionsRepo) {
+    data.github_actions = {
+      url: "https://api.github.com",
+      resource: ghActionsRepo,
+    };
+  }
+  delete data.github_actions_repo;
+
+  const glCiProject = (data.gitlab_ci_project || "").trim();
+  if (glCiProject) {
+    data.gitlab_ci = { url: "https://gitlab.com", resource: glCiProject };
+  }
+  delete data.gitlab_ci_project;
+
+  // Jenkins requires an explicit endpoint (it does not have a single
+  // canonical public URL). Empty endpoint → block omitted.
+  const jenkinsUrl = (data.jenkins_url || "").trim();
+  const jenkinsJob = (data.jenkins_job || "").trim();
+  if (jenkinsUrl && jenkinsJob) {
+    data.jenkins = { url: jenkinsUrl, resource: jenkinsJob };
+  }
+  delete data.jenkins_url;
+  delete data.jenkins_job;
+
+  // Cross-cutting incident window / service hint, applied to every
+  // integration that hasn't already supplied its own bounds.
+  const incidentStart = (data.incident_start || "").trim();
+  const incidentEnd = (data.incident_end || "").trim();
+  const serviceHint = (data.service || "").trim();
+  if (incidentStart || incidentEnd || serviceHint) {
+    for (const key of [
+      "elasticsearch", "prometheus", "github_changes", "gitlab_changes",
+      "kubernetes", "github_actions", "gitlab_ci", "jenkins",
+    ]) {
+      const block = data[key];
+      if (!block || typeof block !== "object") continue;
+      if (incidentStart && !block.incident_start) {
+        block.incident_start = incidentStart;
+      }
+      if (incidentEnd && !block.incident_end) {
+        block.incident_end = incidentEnd;
+      }
+      if (serviceHint && !block.service) {
+        block.service = serviceHint;
+      }
+    }
+  }
+  delete data.incident_start;
+  delete data.incident_end;
+  delete data.service;
+
   try {
     const result = await api("POST", "/api/v1/investigations", data);
     await loadInvestigations();

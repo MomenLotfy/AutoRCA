@@ -88,13 +88,58 @@
       "produces_failure_type_id": "FT002",
       "classification_method": "rule",
       "description": "أي ModuleNotFoundError يظهر داخل سجل CI يُصنَّف مباشرة كدليل على اعتماد مفقود."
+    },
+    {
+      "id": "CR010",
+      "observation_kind": "container_metrics",
+      "source": "docker_metrics",
+      "conditions": [
+        { "field": "data.mem_percent", "matches": "^(8[5-9](\\.\\d+)?|9[0-9](\\.\\d+)?|100(\\.0+)?|\\s*)$" }
+      ],
+      "produces_failure_type_id": "FT011",
+      "classification_method": "rule",
+      "description": "استخدام ذاكرة الحاوية ≥ 85٪ يُصنَّف كدليل مؤيّد على استنزاف موارد الحاوية (samples taken mid-incident often show 85-95٪)."
+    },
+    {
+      "id": "CR011",
+      "observation_kind": "container_event",
+      "source": "docker_events",
+      "conditions": [
+        { "field": "data.event", "matches": "^(oom|kill|destroy|die)$" }
+      ],
+      "produces_failure_type_id": "FT011",
+      "classification_method": "rule",
+      "description": "أي حدث Docker من نوع oom / kill / destroy / die يُصنَّف مباشرة كدليل على استنزاف موارد الحاوية."
+    },
+    {
+      "id": "CR012",
+      "observation_kind": "host_metrics",
+      "source": "host_metrics",
+      "conditions": [
+        { "field": "data.mem_percent", "matches": "^(9[5-9](\\.\\d+)?|100(\\.0+)?|\\s*)$" }
+      ],
+      "produces_failure_type_id": "FT011",
+      "classification_method": "rule",
+      "description": "ضغط ذاكرة المضيف ≥ 95٪ يُصنَّف كدليل مساهم على استنزاف موارد الحاوية."
+    },
+    {
+      "id": "CR013",
+      "observation_kind": "container_metrics",
+      "source": "docker_metrics",
+      "conditions": [
+        { "field": "data.restart_count", "matches": "^[1-9][0-9]*$" }
+      ],
+      "produces_failure_type_id": "FT011",
+      "classification_method": "rule",
+      "description": "إعادة تشغيل الحاوية (restart_count ≥ 1) دون أن تكون مذكورة كقرار تشغيلي مقصود تُصنَّف كدليل مساهم على استنزاف موارد الحاوية."
     }
   ],
 
   "hypothesis_rules": {
     "FT001": { "links": [ { "hypothesis_id": "RC_missing_env", "relation": "supports", "weight": 0.55 } ] },
     "FT002": { "links": [ { "hypothesis_id": "RC_missing_dependency", "relation": "supports", "weight": 0.55 } ] },
-    "FT003": { "links": [ { "hypothesis_id": "RC_port_conflict", "relation": "supports", "weight": 0.60 } ] }
+    "FT003": { "links": [ { "hypothesis_id": "RC_port_conflict", "relation": "supports", "weight": 0.60 } ] },
+    "FT011": { "links": [ { "hypothesis_id": "RC_resource_exhaustion", "relation": "supports", "weight": 0.55 } ] }
   },
 
   "corroboration_rules": {
@@ -107,7 +152,11 @@
       "CR006": 0.35,
       "CR007": 0.35,
       "CR008": 0.35,
-      "CR009": 0.35
+      "CR009": 0.35,
+      "CR010": 0.35,
+      "CR011": 0.35,
+      "CR012": 0.35,
+      "CR013": 0.35
     }
   },
 
@@ -126,12 +175,23 @@
     "description": "raw score != confidence. تُنفَّذ في ScoringEngine كخطوة مستقلة بعد حساب score."
   },
 
+  "confidence_breakdown": {
+    "description": "Phase 1.8 — explainable confidence. كل مكوّن له وزن ثابت يُضاف إلى base score ليُنتج confidence. الترتيب: base + matching_evidence_bonus + temporal_correlation_bonus + resource_correlation_bonus - contradiction_penalty. كل الأوزان هنا deterministic ومُتحقَّقة في RulesConfig.from_dict.",
+    "matching_evidence_bonus": 0.10,
+    "temporal_correlation_bonus": 0.05,
+    "resource_correlation_bonus": 0.05,
+    "contradiction_penalty": 0.10,
+    "max_bonuses_total": 0.20,
+    "round_to": 2
+  },
+
   "severity_policy": {
     "description": "default_severity يأتي من taxonomy.yaml. آخر قاعدة مطابقة في escalation_rules هي التي تفوز.",
     "escalation_rules": [
       { "id": "SP001", "when": { "failure_type_id": "FT001", "context.environment": "production" }, "set_severity": "critical" },
       { "id": "SP002", "when": { "failure_type_id": "FT003", "context.environment": "production" }, "set_severity": "high" },
-      { "id": "SP003", "when": { "context.environment": "local" }, "set_severity": "low" }
+      { "id": "SP003", "when": { "context.environment": "local" }, "set_severity": "low" },
+      { "id": "SP004", "when": { "failure_type_id": "FT011", "context.environment": "production" }, "set_severity": "critical" }
     ]
   },
 
@@ -146,7 +206,8 @@
     "description": "اقتراح إصلاح حتمي مبدئي (Deterministic Placeholder) لكل نوع عطل، يُستخدم في Incident Report لحد ما يتم ربط LLM حقيقي. هذا النص ثابت ومكتوب مسبقًا، وليس ناتجًا عن أي نموذج لغوي — الغرض منه إعطاء قيمة عملية فورية للمستخدم، مع وضوح كامل أنه سيُستبدل بشرح مولَّد من LLM بمجرد تكامله.",
     "FT001": "Restore the missing environment variable and redeploy the service.",
     "FT002": "Reinstall the missing package and ensure it is pinned in the dependency manifest, then redeploy.",
-    "FT003": "Check for an existing process or container already bound to this port, stop it or reassign the port, then redeploy."
+    "FT003": "Check for an existing process or container already bound to this port, stop it or reassign the port, then redeploy.",
+    "FT011": "Investigate container resource limits (memory, CPU, PIDs) and recent workload changes; raise the memory limit or fix the underlying leak/restart loop."
   },
 
   "hypotheses_catalog": {
@@ -167,6 +228,12 @@
       "failure_type_id": "FT003",
       "label": "port_conflict",
       "description": "The application failed to bind because the target port is already in use."
+    },
+    "RC_resource_exhaustion": {
+      "public_id": "RC4",
+      "failure_type_id": "FT011",
+      "label": "container_resource_exhaustion",
+      "description": "The container exhausted its memory, CPU, or PID budget, often because the configured limit was too low or because a recent change increased the workload."
     }
   }
 }

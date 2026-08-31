@@ -15,6 +15,9 @@ VALID_OBSERVATION_KINDS: Tuple[str, ...] = (
     "diff_added_line",
     "exit_code_nonzero",
     "generic_log_line",
+    "container_event",
+    "container_metrics",
+    "host_metrics",
 )
 
 
@@ -51,6 +54,12 @@ class Observation:
     data: Dict[str, object]
     raw_reference: str
     extracted_at: str
+    # Evidence-Model V2 (Phase 1) — additive optional fields. Defaults preserve
+    # the Phase-0 constructor signature so existing call sites keep working.
+    service: Optional[str] = None
+    resource: Optional[str] = None
+    normalized_value: Optional[object] = None
+    timestamp_known: bool = True
 
     def __post_init__(self) -> None:
         if self.kind not in VALID_OBSERVATION_KINDS:
@@ -71,7 +80,7 @@ class Observation:
             )
 
     def to_dict(self) -> Dict[str, object]:
-        return {
+        out: Dict[str, object] = {
             "id": self.id,
             "analysis_id": self.analysis_id,
             "schema_version": self.schema_version,
@@ -84,6 +93,18 @@ class Observation:
             "raw_reference": self.raw_reference,
             "extracted_at": self.extracted_at,
         }
+        # Evidence-Model V2 fields are emitted only when populated so the
+        # on-the-wire payload for the existing schema_version=1 stays
+        # identical and the existing jsonschema validator still passes.
+        if self.service is not None:
+            out["service"] = self.service
+        if self.resource is not None:
+            out["resource"] = self.resource
+        if self.normalized_value is not None:
+            out["normalized_value"] = self.normalized_value
+        if not self.timestamp_known:
+            out["timestamp_known"] = self.timestamp_known
+        return out
 
 
 class ObservationIdGenerator:
@@ -136,6 +157,10 @@ class BaseExtractor(abc.ABC):
         data: Dict[str, object],
         raw_reference: str,
         extracted_at: Optional[str] = None,
+        service: Optional[str] = None,
+        resource: Optional[str] = None,
+        normalized_value: Optional[object] = None,
+        timestamp_known: bool = True,
     ) -> Observation:
         metadata = self.get_metadata()
         if kind not in metadata.produces_kinds:
@@ -156,4 +181,8 @@ class BaseExtractor(abc.ABC):
             data=data,
             raw_reference=raw_reference,
             extracted_at=extracted_at or dt.datetime.now(dt.timezone.utc).isoformat(),
+            service=service,
+            resource=resource,
+            normalized_value=normalized_value,
+            timestamp_known=timestamp_known,
         )

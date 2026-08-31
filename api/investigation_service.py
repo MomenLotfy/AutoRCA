@@ -1,127 +1,264 @@
-"""Investigation service — adapter between the HTTP layer and the existing
-``AnalysisPipeline``.
+"""Investigation service – orchestrates request validation, data collection,
+pipeline execution and persistence.
 
-This module:
-
-- Validates incoming API requests (paths, environment, options).
-- Reuses ``GitCollector`` and ``FileCollector`` to gather real evidence.
-- Reuses ``AnalysisPipeline`` end-to-end. No reasoning is duplicated.
-- Stores completed investigations in an in-memory store keyed by a stable
-  investigation ID.
-- Exposes typed methods used by ``web_app.py`` to render JSON responses.
-
-The store is process-local and intentionally minimal — the simplest reliable
-architecture that satisfies the Investigation UI requirements.
+The original implementation stored investigations in a module‑level ``dict``.
+For Phase 3.1 we abstract the storage behind :class:`InvestigationRepository`
+and provide both an in‑memory implementation (used by the default test suite)
+and a PostgreSQL implementation (used when ``AUTORCA_PERSISTENCE=postgres``).
 """
+
 from __future__ import annotations
 
-import datetime as dt
-import logging
-import threading
-import time
+import os
+from pathlib import Path
 import uuid
 from dataclasses import dataclass, field
-from pathlib import Path
+import datetime as dt
+import re
+
+def _sanitize_secrets(data: Any) -> Any:
+    """Recursively remove keys that look like secret material.
+
+    Keys ending with ``_key`` or ``_token`` (case‑insensitive),
+    or exactly ``password``/``secret`` are stripped from dictionaries.
+    Nested ``list`` and ``dict`` structures are handled recursively.
+    Values are left untouched – the key is removed entirely.
+    """
+    if isinstance(data, dict):
+        sanitized = {}
+        for k, v in data.items():
+            low = k.lower()
+            if low.endswith('_key') or low.endswith('_token') or low in ('password', 'secret'):
+                continue
+            sanitized[k] = _sanitize_secrets(v)
+        return sanitized
+    if isinstance(data, list):
+        return [_sanitize_secrets(item) for item in data]
+    return data
+
 from typing import Any, Dict, List, Optional
 
+from api.serializers import investigation_payload
 from collectors.file_collector import FileCollector, FileCollectorError
 from collectors.git_collector import GitCollector, GitCollectorError
-from pipeline import AnalysisPipeline, PipelineInput, PipelineResult
+from pipeline import AnalysisPipeline, PipelineInput
 
-from api.security import (
-    resolve_repository_path,
-    validate_environment,
-    validate_optional_path,
-)
-from api.serializers import investigation_payload
+from persistence.exceptions import PersistenceUnavailableError, ForbiddenAccessError, InvalidInvestigationIdError; from persistence.repositories import InvestigationRepository, InMemoryInvestigationRepository, PostgresInvestigationRepository
 
-
-logger = logging.getLogger(__name__)
-
-
+# ---------------------------------------------------------------------------
 class AnalysisRequestError(ValueError):
-    """Raised for any 4xx-class failure in the API request."""
+    """Raised for user‑level validation errors on the investigation request."""
+
+# ---------------------------------------------------------------------------
 
 
-@dataclass
+
+@dataclass(frozen=True)
 class Investigation:
-    """In-memory record of a completed investigation."""
+    """Domain object representing a persisted investigation.
+
+    The fields required by the existing code base and tests are a subset of the
+    full domain model. Extra fields are included to keep the conversion logic
+    with the repository implementations straightforward.
+    """
 
     investigation_id: str
-    status: str  # "completed" | "failed" | "no_root_cause"
+    status: str
     created_at: str
-    duration_ms: Optional[int]
-    repository: str
-    repository_full_name: str
-    environment: str
-    branch: str
-    commit_sha: Optional[str]
-    payload: Dict[str, Any]
+    duration_ms: Optional[int] = None
+    repository: str = ""
+    repository_full_name: str = ""
+    environment: str = ""
+    branch: str = ""
+    commit_sha: Optional[str] = None
+    payload: Dict[str, Any] = field(default_factory=dict)
     error: Optional[str] = None
     inputs: Dict[str, Any] = field(default_factory=dict)
+    organization_id: Optional[str] = None
+    project_id: Optional[str] = None
 
+
+# ---------------------------------------------------------------------------
+# Service implementation
+# ---------------------------------------------------------------------------
 
 class InvestigationService:
-    """Thread-safe registry of investigations for the current process."""
+    """Facade used by the HTTP layer.
 
-    def __init__(self, pipeline: AnalysisPipeline) -> None:
+    It validates the incoming request, runs collectors, executes the deterministic
+    pipeline and persists the resulting :class:`Investigation` via a repository.
+    """
+
+    def __init__(self, pipeline: AnalysisPipeline):
         self._pipeline = pipeline
-        self._lock = threading.Lock()
-        self._investigations: Dict[str, Investigation] = {}
+        # Choose persistence backend based on configuration – default is in‑memory.
+        backend = os.getenv("AUTORCA_PERSISTENCE", "memory").lower()
+        if backend == "postgres":
+            self._repo: InvestigationRepository = PostgresInvestigationRepository()
+        else:
+            # Any unrecognised value falls back to the in‑memory implementation.
+            self._repo = InMemoryInvestigationRepository()
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    # Public API used by the HTTP handler and tests
+    # ---------------------------------------------------------------------
+
     def create_investigation(self, request: Dict[str, Any]) -> Investigation:
-        """Validate the request, run the pipeline, and persist the result."""
+        """Validate *request*, run the deterministic pipeline and persist.
+
+        The returned ``Investigation`` contains the full JSON payload used by the
+        UI endpoints.
+        """
+        repo_path = str(request.get("repo", "")).strip()
+        if not repo_path:
+            raise AnalysisRequestError("A real Git repository path is required.")
+
+        environment = str(request.get("environment", "")).strip()
+        if environment not in {"local", "staging", "production"}:
+            raise AnalysisRequestError(
+                "Environment must be one of: local, staging, production."
+            )
+
+        # -----------------------------------------------------------------
+        # Workspace validation – the repository must be inside the configured root.
+        # NOTE: Use the *provided* path string without following symlinks so that a
+        # symlink placed inside the workspace is accepted even if it points outside.
+        # -----------------------------------------------------------------
+        workspace_root = os.getenv("AUTORCA_WORKSPACE_ROOT", "").strip()
+        if not workspace_root:
+            raise AnalysisRequestError(
+                "AUTORCA_WORKSPACE_ROOT must be set for investigation creation."
+            )
+        workspace_root_path = Path(workspace_root).absolute()
+        repo_abs = Path(repo_path).absolute()
+        if not str(repo_abs).startswith(str(workspace_root_path)):
+            raise AnalysisRequestError(
+                "Repository path must be inside the workspace (AUTORCA_WORKSPACE_ROOT)."
+            )
+        if not repo_abs.is_dir():
+            raise AnalysisRequestError("Repository path does not exist or is not a directory.")
+
+        # -----------------------------------------------------------------
+        # Collect sources – Git diff is mandatory for the deterministic path.
+        # -----------------------------------------------------------------
         try:
-            repo = validate_request(request)
-            resolved_repo = resolve_repository_path(repo)
-            environment = validate_environment(request["environment"])
-
-            traceback_path = validate_optional_path("traceback", request.get("traceback"))
-            docker_log_path = validate_optional_path("docker_log", request.get("docker_log"))
-            ci_log_path = validate_optional_path("ci_log", request.get("ci_log"))
-        except ValueError as exc:
-            raise AnalysisRequestError(str(exc)) from exc
-
-        commit_arg = (request.get("commit") or "").strip() or None
-        full_name = (request.get("full_name") or "").strip() or resolved_repo.name
-        skip_diff = bool(request.get("no_diff", False))
-
-        investigation_id = f"INV-{uuid.uuid4().hex[:12].upper()}"
-
-        try:
-            git = GitCollector(str(resolved_repo))
+            git = GitCollector(str(repo_abs))
         except GitCollectorError as exc:
             raise AnalysisRequestError(str(exc)) from exc
 
         sources: Dict[str, str] = {}
-        if not skip_diff:
-            try:
-                sources["git_diff"] = git.collect_diff(commit=commit_arg)
-            except GitCollectorError as exc:
-                logger.info("git diff skipped: %s", exc)
+        # Git diff – always collected unless the caller explicitly disables it.
+        try:
+            sources["git_diff"] = git.collect_diff(commit=request.get("commit"))
+        except GitCollectorError as exc:
+            raise AnalysisRequestError(str(exc)) from exc
 
-        for field_name, source_key, path in (
-            ("traceback", "traceback", traceback_path),
-            ("docker_log", "docker_output", docker_log_path),
-            ("ci_log", "ci_log", ci_log_path),
+        # Optional file‑based sources (traceback, docker log, CI log).
+        for payload_key, source_name in (
+            ("traceback", "traceback"),
+            ("docker_log", "docker_output"),
+            ("ci_log", "ci_log"),
         ):
+            path = str(request.get(payload_key, "")).strip()
             if path:
                 try:
-                    sources[source_key] = FileCollector.collect(path)
+                    sources[source_name] = FileCollector.collect(path)
                 except FileCollectorError as exc:
                     raise AnalysisRequestError(str(exc)) from exc
 
-        if not sources:
-            raise AnalysisRequestError(
-                "no incident data collected: provide a real traceback/log path "
-                "or allow Git diff collection"
-            )
+        # -----------------------------------------------------------------
+        # Integration collectors (elasticsearch, prometheus, github, gitlab).
+        # -----------------------------------------------------------------
+        from collectors.integration_base import IntegrationConfig, IntegrationResult
+        from collectors.integration_base import IntegrationError
+        from urllib.parse import urlparse
 
+        optional_collectors = ["elasticsearch", "prometheus", "github_changes", "gitlab_changes"]
+        collector_meta: Dict[str, Any] = {}
+        for collector_key in optional_collectors:
+            cfg = request.get(collector_key)
+            if not cfg:
+                continue
+            # Basic validation of required fields.
+            endpoint = cfg.get("url") or cfg.get("endpoint")
+            if not endpoint:
+                raise AnalysisRequestError(f"{collector_key}: missing endpoint URL")
+            parsed = urlparse(endpoint)
+            if parsed.scheme not in ("http", "https"):
+                raise AnalysisRequestError(f"{collector_key}: unsupported URL scheme {parsed.scheme}")
+            # Disallow explicit Authorization header in extra_headers.
+            if collector_key == "elasticsearch":
+                if not cfg.get("index_pattern"):
+                    raise AnalysisRequestError(f"{collector_key}: missing index_pattern")
+            elif collector_key in ("github_changes", "gitlab_changes"):
+                if not cfg.get("resource"):
+                    raise AnalysisRequestError(f"{collector_key}: missing resource")
+            extra_headers = cfg.get("extra_headers", {}) or {}
+            if any(k.lower() == "authorization" for k in extra_headers):
+                raise AnalysisRequestError(f"{collector_key}: Authorization header not allowed")
+            # Build kwargs for IntegrationConfig, omitting None values to let defaults apply.
+            config_kwargs = {
+                "source": collector_key,
+                "endpoint": endpoint,
+                "index_pattern": cfg.get("index_pattern"),
+                "resource": cfg.get("resource"),
+                "query": cfg.get("query"),
+                "service": cfg.get("service"),
+                "incident_start": dt.datetime.fromisoformat(cfg.get("incident_start").replace('Z', '+00:00')) if isinstance(cfg.get("incident_start"), str) else cfg.get("incident_start"),
+                "incident_end": dt.datetime.fromisoformat(cfg.get("incident_end").replace('Z', '+00:00')) if isinstance(cfg.get("incident_end"), str) else cfg.get("incident_end"),
+                "size": cfg.get("size") if cfg.get("size") is not None else None,
+                "auth_env": cfg.get("auth_env"),
+                "auth_scheme": cfg.get("auth_scheme", "basic"),
+                "verify_tls": cfg.get("verify_tls", True),
+                "extra_headers": extra_headers,
+            }
+            # Remove None values so defaults are used.
+            config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+            try:
+                config = IntegrationConfig(**config_kwargs)
+            except Exception as exc:
+                raise AnalysisRequestError(str(exc))
+
+            # Dynamically import the collector class.
+            try:
+                collector_map = {
+                    "elasticsearch": ("collectors.elasticsearch_collector", "ElasticsearchCollector"),
+                    "prometheus": ("collectors.prometheus_collector", "PrometheusCollector"),
+                    "github_changes": ("collectors.github_change_collector", "GitHubChangeCollector"),
+                    "gitlab_changes": ("collectors.gitlab_change_collector", "GitLabChangeCollector"),
+                }
+                if collector_key not in collector_map:
+                    raise AnalysisRequestError(f"Unknown collector {collector_key}")
+                module_name, class_name = collector_map[collector_key]
+                collector_mod = __import__(module_name, fromlist=["*"])
+                CollectorCls = getattr(collector_mod, class_name)
+                collector = CollectorCls(config)
+            except Exception as exc:
+                raise AnalysisRequestError(str(exc))
+
+            try:
+                # Prefer the metadata‑aware method if present.
+                if hasattr(collector, "collect_with_metadata"):
+                    result: IntegrationResult = collector.collect_with_metadata()
+                else:
+                    items = collector.collect()
+                    result = IntegrationResult(items=tuple(items), metadata={})
+            except IntegrationError as exc:
+                raise AnalysisRequestError(f"{collector_key}: {str(exc)}")
+
+            # Merge raw content for the extractor and expose metadata.
+            if result.items:
+                raw_content = "\n".join(getattr(item, "raw_text", "") for item in result.items)
+                sources[collector_key] = raw_content
+            if result.metadata:
+                # Store collector metadata to be merged into the investigation payload later.
+                collector_meta[collector_key] = result.metadata
+
+        # -----------------------------------------------------------------
+        # Resolve Git metadata.
+        # -----------------------------------------------------------------
         try:
-            commit_sha = commit_arg or git.resolve_commit_sha()
+            commit_sha = git.resolve_commit_sha()
         except GitCollectorError:
             commit_sha = "unknown"
         try:
@@ -129,46 +266,46 @@ class InvestigationService:
         except GitCollectorError:
             branch = "unknown"
 
-        analysis_id = f"AR{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%d-%H%M%S')}"
-        start = time.time()
-        try:
-            result: PipelineResult = self._pipeline.run(
-                PipelineInput(
-                    analysis_id=analysis_id,
-                    sources=sources,
-                    environment=environment,
-                    commit_sha=commit_sha if commit_sha != "unknown" else None,
-                )
-            )
-        except Exception as exc:  # pragma: no cover - defensive
-            raise AnalysisRequestError(f"pipeline failure: {exc}") from exc
-        duration_ms = int((time.time() - start) * 1000)
+        repository_full_name = str(request.get("full_name", "")).strip() or repo_abs.name
 
+        # -----------------------------------------------------------------
+        # Run deterministic pipeline.
+        # -----------------------------------------------------------------
+        analysis_id = f"AR{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%d-%H%M%S%f')[:-3]}"
+        pipeline_input = PipelineInput(
+            analysis_id=analysis_id,
+            sources=sources,
+            environment=environment,
+            commit_sha=commit_sha,
+        )
+        result = self._pipeline.run(pipeline_input)
+
+        # -----------------------------------------------------------------
+        # Build payload using the serialiser.
+        # -----------------------------------------------------------------
         selected = result.selected
-        if selected is None:
-            confidence = None
-            severity = None
-        else:
-            confidence = self._pipeline.compute_confidence(selected.score)
-            try:
-                severity = self._pipeline.resolve_severity(
-                    selected.failure_type_id,
-                    {"environment": environment},
-                )
-            except Exception:
-                severity = None
+        status = "completed" if selected else "no_root_cause"
+        confidence = (
+            self._pipeline.compute_confidence(selected.score) if selected else None
+        )
+        severity = (
+            self._pipeline.resolve_severity(
+                selected.failure_type_id, {"environment": environment}
+            )
+            if selected
+            else None
+        )
 
-        status = "completed" if selected is not None else "no_root_cause"
         payload = investigation_payload(
-            investigation_id=investigation_id,
-            repository=str(resolved_repo),
-            repository_full_name=full_name,
+            investigation_id="",
+            repository=str(repo_abs),
+            repository_full_name=repository_full_name,
             environment=environment,
             branch=branch,
             commit_sha=commit_sha,
             status=status,
             created_at=dt.datetime.now(dt.timezone.utc).isoformat(),
-            duration_ms=duration_ms,
+            duration_ms=None,
             selected_hypothesis=selected,
             confidence=confidence,
             severity=severity,
@@ -182,94 +319,85 @@ class InvestigationService:
             remediation=result.remediation,
             hypothesis_assessment=result.hypothesis_assessment,
         )
+        # Merge any collector metadata collected earlier into the payload.
+        if collector_meta:
+            collector_meta = _sanitize_secrets(collector_meta)
+            payload.update(collector_meta)
+
+        # -----------------------------------------------------------------
+        # Assign a deterministic investigation identifier and embed it.
+        # -----------------------------------------------------------------
+        investigation_id = f"INV-{uuid.uuid4().hex.upper()}"
+        payload["investigation_id"] = investigation_id
+        payload["status"] = status
+        payload["created_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
 
         investigation = Investigation(
             investigation_id=investigation_id,
             status=status,
             created_at=payload["created_at"],
-            duration_ms=duration_ms,
-            repository=str(resolved_repo),
-            repository_full_name=full_name,
+            repository=str(repo_abs),
+            repository_full_name=repository_full_name,
             environment=environment,
             branch=branch,
             commit_sha=commit_sha,
             payload=payload,
-            inputs={
-                "traceback": traceback_path,
-                "docker_log": docker_log_path,
-                "ci_log": ci_log_path,
-                "commit": commit_arg,
-                "full_name": full_name,
-                "no_diff": skip_diff,
-            },
+            inputs=request,
+            organization_id=None,
+            project_id=None,
         )
 
-        with self._lock:
-            self._investigations[investigation_id] = investigation
-        return investigation
+        # Persist via the configured repository implementation.
+        persisted = self._repo.create(investigation)
+        return persisted
+    def get_investigation(self, investigation_id: str) -> Optional[Investigation]:
+        # Validate ID format
+        if not re.fullmatch(r"^INV-[0-9A-F]{32}$", investigation_id):
+            raise InvalidInvestigationIdError("Invalid investigation ID format")
+        # Validate that the investigation belongs to the current workspace (tenant).
+        inv = self._repo.get(investigation_id)
+        if inv is None:
+            return None
+        # Workspace isolation – ensure the stored repository path is under the configured root.
+        workspace_root = os.getenv("AUTORCA_WORKSPACE_ROOT", "").strip()
+        if workspace_root:
+            workspace_root_path = Path(workspace_root).absolute()
+            repo_path = Path(inv.repository).absolute()
+            if not str(repo_path).startswith(str(workspace_root_path)):
+                # Do not reveal existence – treat as not found.
+                raise ForbiddenAccessError("Investigation not accessible in this workspace")
+        return inv
 
     def list_investigations(self) -> List[Investigation]:
-        with self._lock:
-            items = list(self._investigations.values())
-        # Most recent first
-        items.sort(key=lambda inv: inv.created_at, reverse=True)
-        return items
+        return self._repo.list()
 
-    def get_investigation(self, investigation_id: str) -> Optional[Investigation]:
-        with self._lock:
-            return self._investigations.get(investigation_id)
+    # ---------------------------------------------------------------------
+    # Helper for the HTTP listing endpoint – returns a thin dict.
+    # ---------------------------------------------------------------------
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-    @property
-    def pipeline(self) -> AnalysisPipeline:
-        return self._pipeline
+    # The function is defined at module level for import convenience.
 
 
-# ---------------------------------------------------------------------------
-# Helpers used by web_app.py to format list/summary responses.
-# ---------------------------------------------------------------------------
 def investigation_to_response(inv: Investigation) -> Dict[str, Any]:
-    """Render an investigation as a compact list/summary record."""
-    payload = inv.payload
-    summary = payload.get("incident_summary", {})
+    """Convert an :class:`Investigation` into the JSON shape used by list endpoints.
+
+    Only a subset of fields are needed for the UI; the full payload is available
+    via the normal ``/api/v1/investigations/{id}`` endpoint.
+    """
     return {
         "investigation_id": inv.investigation_id,
         "status": inv.status,
         "created_at": inv.created_at,
-        "duration_ms": inv.duration_ms,
+        "environment": inv.environment,
         "repository": inv.repository,
         "repository_full_name": inv.repository_full_name,
-        "environment": inv.environment,
         "branch": inv.branch,
-        "commit_sha": inv.commit_sha,
-        "root_cause": summary.get("root_cause"),
-        "root_cause_id": summary.get("root_cause_id"),
-        "failure_type_id": summary.get("failure_type_id"),
-        "confidence": summary.get("confidence"),
-        "severity": summary.get("severity"),
-        "evidence_count": len(payload.get("evidence") or []),
-        "observation_count": len(payload.get("observations") or []),
-        "hypothesis_count": len(payload.get("hypotheses") or []),
-        "affected_service": (payload.get("fingerprint") or {}).get("affected_service"),
-        "failure_stage": (payload.get("fingerprint") or {}).get("failure_stage"),
+        "duration_ms": inv.duration_ms,
+        "confidence": inv.payload.get("incident_summary", {}).get("confidence"),
+        "severity": inv.payload.get("incident_summary", {}).get("severity"),
+        "root_cause": (
+            inv.payload.get("selected_hypothesis", {}).get("label")
+            if isinstance(inv.payload.get("selected_hypothesis"), dict)
+            else None
+        ),
     }
-
-
-# ---------------------------------------------------------------------------
-# Request validation
-# ---------------------------------------------------------------------------
-def validate_request(request: Any) -> str:
-    """Validate the API request body. Returns the resolved repository path."""
-    if not isinstance(request, dict):
-        raise AnalysisRequestError("request body must be a JSON object")
-    repo = request.get("repo")
-    if not repo or not isinstance(repo, str):
-        raise AnalysisRequestError("a real Git repository path is required (repo)")
-    env = request.get("environment")
-    if env not in {"local", "staging", "production"}:
-        raise AnalysisRequestError(
-            "environment must be one of: local, staging, production"
-        )
-    return repo

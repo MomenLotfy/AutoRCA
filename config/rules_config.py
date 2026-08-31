@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List
 
@@ -41,7 +41,26 @@ _REQUIRED_TOP_LEVEL_KEYS = (
     "hypotheses_catalog",
     "fix_hints",
     "rca_request_limits",
+    # Phase 1.8 — explainable confidence weights. OPTIONAL with safe defaults
+    # so the existing baseline tests keep passing without modification.
+    # When present, its numeric weights are validated below.
 )
+_REQUIRED_CONFIDENCE_BREAKDOWN_KEYS = (
+    "matching_evidence_bonus",
+    "temporal_correlation_bonus",
+    "resource_correlation_bonus",
+    "contradiction_penalty",
+    "max_bonuses_total",
+    "round_to",
+)
+_DEFAULT_CONFIDENCE_BREAKDOWN = {
+    "matching_evidence_bonus": 0.0,
+    "temporal_correlation_bonus": 0.0,
+    "resource_correlation_bonus": 0.0,
+    "contradiction_penalty": 0.0,
+    "max_bonuses_total": 0.0,
+    "round_to": 2,
+}
 _REQUIRED_RCA_REQUEST_LIMIT_KEYS = ("max_diff_lines", "max_log_lines", "log_context_window")
 
 
@@ -62,6 +81,7 @@ class RulesConfig:
     hypotheses_catalog: Dict[str, dict]
     rca_request_limits: dict
     fix_hints: Dict[str, str]
+    confidence_breakdown: Dict[str, float] = field(default_factory=lambda: dict(_DEFAULT_CONFIDENCE_BREAKDOWN))
 
     @classmethod
     def from_dict(cls, raw: dict) -> "RulesConfig":
@@ -73,6 +93,7 @@ class RulesConfig:
         cls._validate_hypothesis_rules_reference_catalog(
             raw["hypothesis_rules"], raw["hypotheses_catalog"]
         )
+        confidence_breakdown = cls._validate_and_get_confidence_breakdown(raw)
 
         return cls(
             schema_version=raw["schema_version"],
@@ -86,6 +107,7 @@ class RulesConfig:
             hypotheses_catalog=raw["hypotheses_catalog"],
             rca_request_limits=raw["rca_request_limits"],
             fix_hints=raw["fix_hints"],
+            confidence_breakdown=confidence_breakdown,
         )
 
     @classmethod
@@ -185,3 +207,48 @@ class RulesConfig:
                         f"hypothesis_rules['{failure_type_id}'] يشير إلى "
                         f"hypothesis_id='{hypothesis_id}' غير موجود في hypotheses_catalog."
                     )
+
+    @classmethod
+    def _validate_and_get_confidence_breakdown(cls, raw: dict) -> Dict[str, float]:
+        """Phase 1.8 — optional `confidence_breakdown` section.
+
+        When absent, returns the safe default (all bonuses zero), which
+        preserves Phase-0 behaviour: confidence is purely the clamped,
+        rounded raw score. When present, every required numeric key must
+        be a float in [0, 1].
+        """
+        breakdown = raw.get("confidence_breakdown")
+        if breakdown is None:
+            return dict(_DEFAULT_CONFIDENCE_BREAKDOWN)
+
+        missing = [k for k in _REQUIRED_CONFIDENCE_BREAKDOWN_KEYS if k not in breakdown]
+        if missing:
+            raise RulesConfigError(
+                f"confidence_breakdown ناقص المفاتيح: {missing}"
+            )
+
+        for key in _REQUIRED_CONFIDENCE_BREAKDOWN_KEYS:
+            if key == "round_to":
+                # integer digits; handled below
+                continue
+            value = breakdown[key]
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise RulesConfigError(
+                    f"confidence_breakdown['{key}'] يجب أن يكون رقمًا في [0,1]."
+                )
+            if value < 0.0 or value > 1.0:
+                raise RulesConfigError(
+                    f"confidence_breakdown['{key}']={value} خارج النطاق [0,1]."
+                )
+
+        # `round_to` is integer-typed, not a weight.
+        if not isinstance(breakdown["round_to"], int) or isinstance(breakdown["round_to"], bool):
+            raise RulesConfigError(
+                "confidence_breakdown['round_to'] يجب أن يكون عددًا صحيحًا غير سالب."
+            )
+        if breakdown["round_to"] < 0:
+            raise RulesConfigError(
+                "confidence_breakdown['round_to'] يجب أن يكون عددًا صحيحًا غير سالب."
+            )
+
+        return dict(breakdown)

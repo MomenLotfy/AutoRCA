@@ -1,0 +1,160 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: DEVOPS INCIDENT INTELLIGENCE
+    - heading "AutoRCA" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Evidence-based root cause analysis. Deterministic decisions, AI-powered explanations.
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: REAL INCIDENT INPUT
+        - heading "Analyze a real incident" [level=2] [ref=e11]
+      - generic [ref=e12]: LOCAL PIPELINE
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: Git repository path
+          - textbox "Git repository path Must be inside the allowed workspace." [active] [ref=e17]:
+            - /placeholder: /path/to/real/git/repository
+          - generic [ref=e18]: Must be inside the allowed workspace.
+        - generic [ref=e19]:
+          - text: Environment
+          - combobox "Environment" [ref=e20]:
+            - option "Production" [selected]
+            - option "Staging"
+            - option "Local"
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - text: Traceback / log file
+          - generic [ref=e23]: optional
+          - textbox "Traceback / log file optional" [ref=e24]:
+            - /placeholder: /path/to/real/traceback.txt
+        - generic [ref=e25]:
+          - text: Commit SHA
+          - generic [ref=e26]: optional
+          - textbox "Commit SHA optional" [ref=e27]:
+            - /placeholder: Defaults to latest commit
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - text: Repository name
+          - generic [ref=e30]: optional
+          - textbox "Repository name optional" [ref=e31]:
+            - /placeholder: org/repository
+        - generic [ref=e32]:
+          - text: CI / Docker log file
+          - generic [ref=e33]: optional
+          - textbox "CI / Docker log file optional" [ref=e34]:
+            - /placeholder: /path/to/real/ci.log
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - text: Elasticsearch URL
+          - generic [ref=e37]: optional — Phase 2.1
+          - textbox "Elasticsearch URL optional — Phase 2.1 http(s) URL only. No embedded credentials." [ref=e38]:
+            - /placeholder: https://es.example.com:9200
+          - generic [ref=e39]: http(s) URL only. No embedded credentials.
+        - generic [ref=e40]:
+          - text: Elasticsearch index pattern
+          - generic [ref=e41]: optional
+          - textbox "Elasticsearch index pattern optional" [ref=e42]:
+            - /placeholder: logs-*
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - text: Elasticsearch service filter
+          - generic [ref=e45]: optional
+          - textbox "Elasticsearch service filter optional" [ref=e46]:
+            - /placeholder: payment-api
+        - generic [ref=e47]:
+          - text: Elasticsearch size
+          - generic [ref=e48]: optional
+          - spinbutton "Elasticsearch size optional" [ref=e49]
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - text: Prometheus URL
+          - generic [ref=e52]: optional — Phase 2.2
+          - textbox "Prometheus URL optional — Phase 2.2 http(s) URL of the Prometheus HTTP API." [ref=e53]:
+            - /placeholder: https://prom.example.com
+          - generic [ref=e54]: http(s) URL of the Prometheus HTTP API.
+        - generic [ref=e55]:
+          - text: Prometheus query (PromQL)
+          - generic [ref=e56]: optional
+          - textbox "Prometheus query (PromQL) optional" [ref=e57]:
+            - /placeholder: rate(http_requests_total[5m])
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - text: GitHub repo
+          - generic [ref=e60]: optional — Phase 2.2
+          - textbox "GitHub repo optional — Phase 2.2 e.g. owner/repo." [ref=e61]:
+            - /placeholder: octocat/Hello-World
+          - generic [ref=e62]: e.g. owner/repo.
+        - generic [ref=e63]:
+          - text: GitLab project
+          - generic [ref=e64]: optional
+          - textbox "GitLab project optional Use the full GitLab project path." [ref=e65]:
+            - /placeholder: mygroup/mysubgroup/project
+          - generic [ref=e66]: Use the full GitLab project path.
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - text: Kubernetes API URL
+          - generic [ref=e69]: optional — Phase 2.3
+          - textbox "Kubernetes API URL optional — Phase 2.3 Read-only API; bearer token via env var." [ref=e70]:
+            - /placeholder: https://kubernetes.default.svc
+          - generic [ref=e71]: Read-only API; bearer token via env var.
+        - generic [ref=e72]:
+          - text: Kubernetes namespace
+          - generic [ref=e73]: optional
+          - textbox "Kubernetes namespace optional Use \"all-namespaces\" to span all reachable namespaces." [ref=e74]:
+            - /placeholder: default
+          - generic [ref=e75]: Use "all-namespaces" to span all reachable namespaces.
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - text: GitHub Actions repo
+          - generic [ref=e78]: optional — Phase 2.3
+          - textbox "GitHub Actions repo optional — Phase 2.3 owner/repo for workflow runs." [ref=e79]:
+            - /placeholder: octocat/Hello-World
+          - generic [ref=e80]: owner/repo for workflow runs.
+        - generic [ref=e81]:
+          - text: GitLab CI project
+          - generic [ref=e82]: optional
+          - textbox "GitLab CI project optional Full project path for GitLab CI pipelines." [ref=e83]:
+            - /placeholder: mygroup/mysubgroup/project
+          - generic [ref=e84]: Full project path for GitLab CI pipelines.
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - text: Jenkins job
+          - generic [ref=e87]: optional — Phase 2.3
+          - textbox "Jenkins job optional — Phase 2.3 Folder/job path on the Jenkins controller." [ref=e88]:
+            - /placeholder: my-folder/my-pipeline
+          - generic [ref=e89]: Folder/job path on the Jenkins controller.
+        - generic [ref=e90]:
+          - text: Incident window start
+          - generic [ref=e91]: optional
+          - textbox "Incident window start optional Applied to all enabled integrations." [ref=e92]:
+            - /placeholder: 2026-08-27T10:00
+          - generic [ref=e93]: Applied to all enabled integrations.
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - text: Incident window end
+          - generic [ref=e96]: optional
+          - textbox "Incident window end optional End of the requested incident window." [ref=e97]:
+            - /placeholder: 2026-08-27T11:00
+          - generic [ref=e98]: End of the requested incident window.
+        - generic [ref=e99]:
+          - text: Service name
+          - generic [ref=e100]: optional
+          - textbox "Service name optional Hint propagated to every integration." [ref=e101]:
+            - /placeholder: payment-api
+          - generic [ref=e102]: Hint propagated to every integration.
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - checkbox "Skip Git diff collection" [ref=e105]
+          - text: Skip Git diff collection
+        - button "Run investigation →" [ref=e106] [cursor=pointer]:
+          - generic [ref=e107]: Run investigation
+          - generic [ref=e108]: →
+  - generic [ref=e109]:
+    - generic [ref=e110]:
+      - generic [ref=e111]:
+        - generic [ref=e112]: INCIDENTS
+        - heading "Recent investigations" [level=2] [ref=e113]
+      - generic [ref=e114]: 0 incidents
+    - generic [ref=e115]: No investigations yet. Run your first analysis above.
+  - generic [ref=e117]: AutoRCA • AI explains the decision. AI does not make the decision.

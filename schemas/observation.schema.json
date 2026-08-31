@@ -24,7 +24,21 @@
     },
     "source": {
       "type": "string",
-      "enum": ["traceback", "git_diff", "ci_log", "docker_output", "test_output"]
+      "enum": [
+        "traceback",
+        "git_diff",
+        "ci_log",
+        "docker_output",
+        "test_output",
+        "elasticsearch",
+        "prometheus",
+        "github_changes",
+        "gitlab_changes",
+        "kubernetes",
+        "github_actions",
+        "gitlab_ci",
+        "jenkins"
+      ]
     },
     "producer_id": { "type": "string" },
     "producer_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },

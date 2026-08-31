@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import sys
+import os
 import threading
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -20,6 +21,7 @@ from api.investigation_service import (
     InvestigationService,
     investigation_to_response,
 )
+from persistence.exceptions import PersistenceUnavailableError, ForbiddenAccessError, InvalidInvestigationIdError
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 STATIC_ROOT = PROJECT_ROOT / "web" / "static"
@@ -248,7 +250,7 @@ class AutoRCAHandler(BaseHTTPRequestHandler):
             except (json.JSONDecodeError, AnalysisRequestError) as exc:
                 self._send_json({"error": str(exc)}, 400)
             except Exception as exc:
-                self._send_json({"error": f"Analysis failed: {exc}"}, 500)
+                self._send_json({"error": "internal server error"}, 500)
             return
 
         if path == "/api/v1/investigations":
@@ -265,10 +267,12 @@ class AutoRCAHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": f"invalid JSON: {exc}"}, 400)
             except AnalysisRequestError as exc:
                 self._send_json({"error": str(exc)}, 400)
+            except PersistenceUnavailableError as exc:
+                self._send_json({"error": "service unavailable"}, 503)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, 400)
             except Exception as exc:
-                self._send_json({"error": f"investigation failed: {exc}"}, 500)
+                self._send_json({"error": "internal server error"}, 500)
             return
 
         self._send_json({"error": "Not found"}, 404)
@@ -293,12 +297,30 @@ class AutoRCAHandler(BaseHTTPRequestHandler):
 
     def _list_investigations(self) -> None:
         service = _get_investigation_service()
-        items = [investigation_to_response(inv) for inv in service.list_investigations()]
-        self._send_json({"investigations": items, "count": len(items)}, 200)
+        try:
+            items = [investigation_to_response(inv) for inv in service.list_investigations()]
+            self._send_json({"investigations": items, "count": len(items)}, 200)
+        except PersistenceUnavailableError as exc:
+            self._send_json({"error": "service unavailable"}, 503)
+        except Exception as exc:
+            self._send_json({"error": "internal server error"}, 500)
 
     def _get_investigation(self, investigation_id: str) -> None:
         service = _get_investigation_service()
-        investigation = service.get_investigation(investigation_id)
+        try:
+            investigation = service.get_investigation(investigation_id)
+        except ForbiddenAccessError as exc:
+            self._send_json({"error": "access denied"}, 404)
+            return
+        except PersistenceUnavailableError as exc:
+            self._send_json({"error": "service unavailable"}, 503)
+            return
+        except InvalidInvestigationIdError as exc:
+            self._send_json({"error": "investigation not found"}, 404)
+            return
+        except Exception as exc:
+            self._send_json({"error": "internal server error"}, 500)
+            return
         if investigation is None:
             self._send_json({"error": "investigation not found"}, 404)
             return
@@ -306,7 +328,20 @@ class AutoRCAHandler(BaseHTTPRequestHandler):
 
     def _get_investigation_section(self, investigation_id: str, section: str) -> None:
         service = _get_investigation_service()
-        investigation = service.get_investigation(investigation_id)
+        try:
+            investigation = service.get_investigation(investigation_id)
+        except ForbiddenAccessError as exc:
+            self._send_json({"error": "access denied"}, 404)
+            return
+        except PersistenceUnavailableError as exc:
+            self._send_json({"error": "service unavailable"}, 503)
+            return
+        except InvalidInvestigationIdError as exc:
+            self._send_json({"error": "investigation not found"}, 404)
+            return
+        except Exception as exc:
+            self._send_json({"error": "internal server error"}, 500)
+            return
         if investigation is None:
             self._send_json({"error": "investigation not found"}, 404)
             return

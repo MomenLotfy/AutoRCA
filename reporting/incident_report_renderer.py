@@ -28,6 +28,20 @@ _SOURCE_LABELS = {
     "docker_output": "Docker output",
     "ci_log": "CI log",
     "test_output": "Test output",
+    # Phase 2.1 — external observability sources.
+    "elasticsearch": "Elasticsearch documents",
+    "docker_events": "Docker events",
+    "docker_metrics": "Docker container metrics",
+    "host_metrics": "Host metrics",
+    # Phase 2.2 — additional external integrations.
+    "prometheus": "Prometheus query result",
+    "github_changes": "GitHub changes (commits / PRs)",
+    "gitlab_changes": "GitLab changes (commits / merge requests)",
+    # Phase 2.3 — Kubernetes + CI/CD.
+    "kubernetes": "Kubernetes cluster state (pods / events / deployments)",
+    "github_actions": "GitHub Actions workflow runs",
+    "gitlab_ci": "GitLab CI pipelines",
+    "jenkins": "Jenkins builds",
 }
 
 

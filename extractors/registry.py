@@ -16,6 +16,21 @@ VALID_SOURCES: Tuple[str, ...] = (
     "ci_log",
     "docker_output",
     "test_output",
+    # Phase 1 additions — docker_events / docker_metrics / host_metrics.
+    "docker_events",
+    "docker_metrics",
+    "host_metrics",
+    # Phase 2.1 — external observability integrations.
+    "elasticsearch",
+    # Phase 2.2 — additional external integrations.
+    "prometheus",
+    "github_changes",
+    "gitlab_changes",
+    # Phase 2.3 — Kubernetes + CI/CD.
+    "kubernetes",
+    "github_actions",
+    "gitlab_ci",
+    "jenkins",
 )
 
 _SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")

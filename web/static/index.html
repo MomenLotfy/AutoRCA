@@ -53,6 +53,82 @@
               <input name="ci_log" placeholder="/path/to/real/ci.log">
             </label>
           </div>
+          <div class="grid two">
+            <label>Elasticsearch URL <span class="optional">optional — Phase 2.1</span>
+              <input name="elasticsearch_url" placeholder="https://es.example.com:9200">
+              <small>http(s) URL only. No embedded credentials.</small>
+            </label>
+            <label>Elasticsearch index pattern <span class="optional">optional</span>
+              <input name="elasticsearch_index" placeholder="logs-*">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Elasticsearch service filter <span class="optional">optional</span>
+              <input name="elasticsearch_service" placeholder="payment-api">
+            </label>
+            <label>Elasticsearch size <span class="optional">optional</span>
+              <input name="elasticsearch_size" type="number" min="1" max="1000" placeholder="100">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Prometheus URL <span class="optional">optional — Phase 2.2</span>
+              <input name="prometheus_url" placeholder="https://prom.example.com">
+              <small>http(s) URL of the Prometheus HTTP API.</small>
+            </label>
+            <label>Prometheus query (PromQL) <span class="optional">optional</span>
+              <input name="prometheus_query" placeholder="rate(http_requests_total[5m])">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>GitHub repo <span class="optional">optional — Phase 2.2</span>
+              <input name="github_repo" placeholder="octocat/Hello-World">
+              <small>e.g. owner/repo.</small>
+            </label>
+            <label>GitLab project <span class="optional">optional</span>
+              <input name="gitlab_project" placeholder="mygroup/mysubgroup/project">
+              <small>Use the full GitLab project path.</small>
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Kubernetes API URL <span class="optional">optional — Phase 2.3</span>
+              <input name="kubernetes_url" placeholder="https://kubernetes.default.svc">
+              <small>Read-only API; bearer token via env var.</small>
+            </label>
+            <label>Kubernetes namespace <span class="optional">optional</span>
+              <input name="kubernetes_namespace" placeholder="default">
+              <small>Use "all-namespaces" to span all reachable namespaces.</small>
+            </label>
+          </div>
+          <div class="grid two">
+            <label>GitHub Actions repo <span class="optional">optional — Phase 2.3</span>
+              <input name="github_actions_repo" placeholder="octocat/Hello-World">
+              <small>owner/repo for workflow runs.</small>
+            </label>
+            <label>GitLab CI project <span class="optional">optional</span>
+              <input name="gitlab_ci_project" placeholder="mygroup/mysubgroup/project">
+              <small>Full project path for GitLab CI pipelines.</small>
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Jenkins job <span class="optional">optional — Phase 2.3</span>
+              <input name="jenkins_job" placeholder="my-folder/my-pipeline">
+              <small>Folder/job path on the Jenkins controller.</small>
+            </label>
+            <label>Incident window start <span class="optional">optional</span>
+              <input name="incident_start" type="datetime-local" placeholder="2026-08-27T10:00">
+              <small>Applied to all enabled integrations.</small>
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Incident window end <span class="optional">optional</span>
+              <input name="incident_end" type="datetime-local" placeholder="2026-08-27T11:00">
+              <small>End of the requested incident window.</small>
+            </label>
+            <label>Service name <span class="optional">optional</span>
+              <input name="service" placeholder="payment-api">
+              <small>Hint propagated to every integration.</small>
+            </label>
+          </div>
           <div class="form-footer">
             <label class="check"><input type="checkbox" name="no_diff"> Skip Git diff collection</label>
             <button type="submit" id="submit-button"><span>Run investigation</span><b>→</b></button>

@@ -153,3 +153,17 @@ failure_types:
     tags: [runtime, security]
     examples:
       - "PermissionError: [Errno 13] Permission denied"
+
+  - id: FT011
+    type: container_resource_exhaustion
+    category: runtime
+    label: "Container Resource Exhaustion"
+    description: "The container exhausted its memory, CPU, or PID budget, often because the configured limit was too low or because a recent change increased the workload."
+    status: implemented
+    default_severity: high
+    tags: [runtime, docker, reliability, resource]
+    examples:
+      - "OOMKilled (exit code 137)"
+      - "container_memory_percent >= 95"
+      - "docker event: oom / kill"
+      - "MemoryError: cannot allocate"

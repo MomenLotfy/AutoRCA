@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3.1 Completion Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Token definitions – light theme */
+        :root {
+            --color-bg: #fdfdfd;          /* off‑white */
+            --color-surface: #ffffff;    /* paper */
+            --color-text: #333333;       /* deep charcoal */
+            --color-muted: #666666;     /* mid‑gray for captions */
+            --color-primary: #006d77;    /* teal accent */
+            --color-secondary: #ff6f61;  /* coral accent */
+            --font-display: "Montserrat", system-ui, sans-serif;
+            --font-body: "Merriweather", Georgia, serif;
+            --radius: 0.5rem;
+            --spacing: 1rem;
+            --max-width: 48rem;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --color-bg: #1e1e1e;
+                --color-surface: #262626;
+                --color-text: #e0e0e0;
+                --color-muted: #a0a0a0;
+                --color-primary: #5dd5c8;   /* lighter teal */
+                --color-secondary: #ff998a; /* lighter coral */
+            }
+        }
+        :root[data-theme="dark"] {
+            --color-bg: #1e1e1e;
+            --color-surface: #262626;
+            --color-text: #e0e0e0;
+            --color-muted: #a0a0a0;
+            --color-primary: #5dd5c8;
+            --color-secondary: #ff998a;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            line-height: 1.6;
+        }
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: var(--spacing);
+        }
+        header {
+            background: var(--color-primary);
+            color: #fff;
+            padding: calc(var(--spacing) * 1.5) var(--spacing);
+            border-radius: var(--radius);
+            margin-bottom: var(--spacing);
+        }
+        header h1 {
+            margin: 0;
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 600;
+            text-wrap: balance;
+        }
+        h2 {
+            margin-top: calc(var(--spacing) * 2);
+            margin-bottom: var(--spacing);
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        h3 {
+            margin-top: var(--spacing);
+            margin-bottom: 0.5rem;
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--color-secondary);
+        }
+        p, li {
+            max-width: 65ch; /* comfortable line length */
+        }
+        ul {
+            padding-left: 1.5rem;
+            margin: 0;
+            list-style: disc;
+            gap: 0.5rem;
+        }
+        li {
+            margin-bottom: 0.4rem;
+        }
+        pre {
+            background: var(--color-surface);
+            padding: var(--spacing);
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--color-muted);
+        }
+        code {
+            font-family: monospace;
+            background: var(--color-surface);
+            padding: 0 0.2rem;
+            border-radius: 0.2rem;
+        }
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing);
+        }
+        .highlight {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            background: var(--color-secondary);
+            color: #fff;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-family: var(--font-display);
+            margin-left: 0.5rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: calc(var(--spacing) * 3);
+            font-size: 0.9rem;
+            color: var(--color-muted);
+        }
+        a {
+            color: var(--color-primary);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Phase 3.1 Completion Report</h1>
+        </header>
+
+        <section class="section">
+            <h2>Summary</h2>
+            <p>The migration of <span class="highlight">AutoRCA</span> persistence from the in‑memory store to PostgreSQL is now complete and fully validated. All required functionality and API contracts have been preserved, and the system behaves identically for existing callers while supporting durable storage.</p>
+        </section>
+
+        <section class="section">
+            <h2>Key Changes Implemented</h2>
+            <ul>
+                <li><strong>Repository abstraction</strong> (<code>InvestigationRepository</code>) with in‑memory and PostgreSQL implementations.</li>
+                <li><strong>SQLAlchemy schema</strong> with <code>organizations</code>, <code>projects</code>, and <code>investigations</code> tables, foreign‑key constraints and a scoped unique constraint (<code>project_id</code>, <code>idempotency_key</code>).</li>
+                <li><strong>Lazy engine initialization</strong> in <code>persistence/database.py</code> to avoid importing <code>psycopg2</code> when the default in‑memory backend is used.</li>
+                <li><strong>Idempotency handling</strong> in both repository implementations to prevent duplicate investigations.</li>
+                <li><strong>Workspace validation</strong> and deterministic investigation IDs.</li>
+                <li><strong>Integration collector improvements</strong>:
+                    <ul>
+                        <li>Unified optional‑collector list (<code>elasticsearch</code>, <code>prometheus</code>, <code>github_changes</code>, <code>gitlab_changes</code>).</li>
+                        <li>Required‑field validation per collector (e.g., <code>index_pattern</code> for Elasticsearch, <code>resource</code> for GitHub/GitLab).</li>
+                        <li>Collector‑specific module and class mapping.</li>
+                        <li>Collector metadata collected into <code>collector_meta</code> and merged after pipeline execution.</li>
+                        <li>Error messages now prefix the collector name.</li>
+                    </ul>
+                </li>
+                <li><strong>Payload construction</strong> now occurs before any metadata merge, eliminating the previous <code>payload</code>-undefined error.</li>
+                <li><strong>Response format</strong> (<code>investigation_to_response</code>) enriched with <code>repository</code> and <code>root_cause</code> fields required by the UI.</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Test Suite Results</h2>
+            <pre>294 passed, 3 skipped in 31.95s</pre>
+        </section>
+
+        <section class="section">
+            <h2>Gate Verification (Phase&nbsp;3.1)</h2>
+            <ul>
+                <li>Missing required fields now return HTTP 400 with a clear error containing the collector name.</li>
+                <li>Integration failures surface as HTTP 400 with messages like <code>elasticsearch: connection refused by mock</code>.</li>
+                <li>Collector metadata appears in the investigation payload under the appropriate keys (<code>elasticsearch</code>, <code>github_changes</code>, <code>gitlab_changes</code>, <code>prometheus</code>).</li>
+                <li>Workspace validation correctly enforces the repository‑inside‑workspace rule.</li>
+                <li>Idempotency is enforced for both in‑memory and PostgreSQL repositories.</li>
+            </ul>
+            <p>All Phase&nbsp;3.1 gates have been satisfied.</p>
+        </section>
+
+        <section class="section">
+            <h2>Next Steps</h2>
+            <p>Phase&nbsp;3.2 (feature enhancements, performance tuning, and production deployment) can now proceed safely, building on the stable foundation established here.</p>
+        </section>
+
+        <footer>
+            <p>Generated by AutoRCA design lead – © 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
