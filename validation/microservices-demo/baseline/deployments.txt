@@ -1,0 +1,13 @@
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                                   SELECTOR
+adservice               1/1     1            1           51m   server       adservice:0708ff4156c2940cdae2ae9bf462207800227f140ac6c7f6ac382955cfcf26c7               app=adservice
+cartservice             1/1     1            1           51m   server       cartservice:136278adbdba8be6a2b4250b4e64a8750b7b5bbd1ccce09d3855931b47602d65             app=cartservice
+checkoutservice         1/1     1            1           51m   server       checkoutservice:ce5338a6eab95163a86d601d36f02ac4141db6f35c59f324c51a96befca2f318         app=checkoutservice
+currencyservice         1/1     1            1           51m   server       currencyservice:052f583ad2d816194b3f68fd60c64ccf16e6516830c66a74c669399237fa247a         app=currencyservice
+emailservice            1/1     1            1           51m   server       emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38            app=emailservice
+frontend                1/1     1            1           51m   server       frontend:78bc8567851f295ddea0cc56e5a9e522674948b6fc1355ff97c61e3e65a004a7                app=frontend
+loadgenerator           1/1     1            1           10m   main         loadgenerator:b7df724f4c3c75f97e77adfe0f4170aabb619730109939874eb2b9dd131760e3           app=loadgenerator
+paymentservice          1/1     1            1           51m   server       paymentservice:4a41c14e814dd6bb6b9f6109d98064facd0846f4bf5e6f6acf3d35d484914554          app=paymentservice
+productcatalogservice   1/1     1            1           51m   server       productcatalogservice:cf0551990661c1f4131d038cd4dcc30e2e3e5553c80dce6dad160323439a99d5   app=productcatalogservice
+recommendationservice   1/1     1            1           51m   server       recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed   app=recommendationservice
+redis-cart              1/1     1            1           51m   redis        redis:alpine                                                                             app=redis-cart
+shippingservice         1/1     1            1           51m   server       shippingservice:ba88e9b1bcaef1f6eececc5bec5cdbbeb8c6800280bedf8974e6c142af657bc2         app=shippingservice

@@ -1,0 +1,253 @@
+LAST SEEN   TYPE      REASON              OBJECT                                        MESSAGE
+54m         Normal    SuccessfulCreate    replicaset/cartservice-fc99f955c              Created pod: cartservice-fc99f955c-99p6v
+54m         Normal    ScalingReplicaSet   deployment/currencyservice                    Scaled up replica set currencyservice-7c887d7c47 from 0 to 1
+54m         Normal    ScalingReplicaSet   deployment/adservice                          Scaled up replica set adservice-697958456d from 0 to 1
+54m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled up replica set emailservice-778d46b464 from 0 to 1
+54m         Normal    ScalingReplicaSet   deployment/checkoutservice                    Scaled up replica set checkoutservice-787cdd8b95 from 0 to 1
+54m         Normal    ScalingReplicaSet   deployment/cartservice                        Scaled up replica set cartservice-fc99f955c from 0 to 1
+54m         Normal    ScalingReplicaSet   deployment/frontend                           Scaled up replica set frontend-7c58b9fd96 from 0 to 1
+54m         Normal    SuccessfulCreate    replicaset/checkoutservice-787cdd8b95         Created pod: checkoutservice-787cdd8b95-4tlrj
+54m         Normal    ScalingReplicaSet   deployment/productcatalogservice              Scaled up replica set productcatalogservice-7bccb8b4fd from 0 to 1
+54m         Normal    Scheduled           pod/recommendationservice-59f5bd4d4f-k26fv    Successfully assigned default/recommendationservice-59f5bd4d4f-k26fv to minikube
+54m         Normal    Scheduled           pod/adservice-697958456d-96ngp                Successfully assigned default/adservice-697958456d-96ngp to minikube
+54m         Normal    Scheduled           pod/checkoutservice-787cdd8b95-4tlrj          Successfully assigned default/checkoutservice-787cdd8b95-4tlrj to minikube
+54m         Normal    ScalingReplicaSet   deployment/paymentservice                     Scaled up replica set paymentservice-5bc87896c from 0 to 1
+54m         Normal    Scheduled           pod/emailservice-778d46b464-hms29             Successfully assigned default/emailservice-778d46b464-hms29 to minikube
+54m         Normal    Scheduled           pod/frontend-7c58b9fd96-kjc9g                 Successfully assigned default/frontend-7c58b9fd96-kjc9g to minikube
+54m         Normal    ScalingReplicaSet   deployment/redis-cart                         Scaled up replica set redis-cart-666496787 from 0 to 1
+54m         Normal    SuccessfulCreate    replicaset/frontend-7c58b9fd96                Created pod: frontend-7c58b9fd96-kjc9g
+54m         Normal    Scheduled           pod/currencyservice-7c887d7c47-gtvzq          Successfully assigned default/currencyservice-7c887d7c47-gtvzq to minikube
+54m         Normal    Scheduled           pod/cartservice-fc99f955c-99p6v               Successfully assigned default/cartservice-fc99f955c-99p6v to minikube
+54m         Normal    SuccessfulCreate    replicaset/emailservice-778d46b464            Created pod: emailservice-778d46b464-hms29
+54m         Normal    SuccessfulCreate    replicaset/adservice-697958456d               Created pod: adservice-697958456d-96ngp
+54m         Normal    ScalingReplicaSet   deployment/recommendationservice              Scaled up replica set recommendationservice-59f5bd4d4f from 0 to 1
+54m         Normal    SuccessfulCreate    replicaset/productcatalogservice-7bccb8b4fd   Created pod: productcatalogservice-7bccb8b4fd-pcdl9
+54m         Normal    SuccessfulCreate    replicaset/currencyservice-7c887d7c47         Created pod: currencyservice-7c887d7c47-gtvzq
+54m         Normal    Scheduled           pod/productcatalogservice-7bccb8b4fd-pcdl9    Successfully assigned default/productcatalogservice-7bccb8b4fd-pcdl9 to minikube
+54m         Normal    Scheduled           pod/redis-cart-666496787-6hgkx                Successfully assigned default/redis-cart-666496787-6hgkx to minikube
+54m         Normal    ScalingReplicaSet   deployment/shippingservice                    Scaled up replica set shippingservice-855dfcd885 from 0 to 1
+54m         Normal    SuccessfulCreate    replicaset/shippingservice-855dfcd885         Created pod: shippingservice-855dfcd885-g9pt7
+54m         Normal    SuccessfulCreate    replicaset/recommendationservice-59f5bd4d4f   Created pod: recommendationservice-59f5bd4d4f-k26fv
+54m         Normal    Scheduled           pod/paymentservice-5bc87896c-96wlv            Successfully assigned default/paymentservice-5bc87896c-96wlv to minikube
+54m         Normal    Scheduled           pod/shippingservice-855dfcd885-g9pt7          Successfully assigned default/shippingservice-855dfcd885-g9pt7 to minikube
+54m         Normal    SuccessfulCreate    replicaset/paymentservice-5bc87896c           Created pod: paymentservice-5bc87896c-96wlv
+54m         Normal    SuccessfulCreate    replicaset/redis-cart-666496787               Created pod: redis-cart-666496787-6hgkx
+52m         Normal    Pulled              pod/adservice-697958456d-96ngp                Container image "adservice:0708ff4156c2940cdae2ae9bf462207800227f140ac6c7f6ac382955cfcf26c7" already present on machine and can be accessed by the pod
+23m         Normal    Pulled              pod/recommendationservice-59f5bd4d4f-k26fv    Container image "recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed" already present on machine and can be accessed by the pod
+54m         Normal    Pulled              pod/currencyservice-7c887d7c47-gtvzq          Container image "currencyservice:052f583ad2d816194b3f68fd60c64ccf16e6516830c66a74c669399237fa247a" already present on machine and can be accessed by the pod
+52m         Normal    Pulled              pod/cartservice-fc99f955c-99p6v               Container image "cartservice:136278adbdba8be6a2b4250b4e64a8750b7b5bbd1ccce09d3855931b47602d65" already present on machine and can be accessed by the pod
+54m         Normal    Pulled              pod/checkoutservice-787cdd8b95-4tlrj          Container image "checkoutservice:ce5338a6eab95163a86d601d36f02ac4141db6f35c59f324c51a96befca2f318" already present on machine and can be accessed by the pod
+54m         Normal    Created             pod/checkoutservice-787cdd8b95-4tlrj          Container created
+24m         Normal    Pulled              pod/emailservice-778d46b464-hms29             Container image "emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38" already present on machine and can be accessed by the pod
+54m         Normal    Pulled              pod/frontend-7c58b9fd96-kjc9g                 Container image "frontend:78bc8567851f295ddea0cc56e5a9e522674948b6fc1355ff97c61e3e65a004a7" already present on machine and can be accessed by the pod
+54m         Normal    Pulled              pod/paymentservice-5bc87896c-96wlv            Container image "paymentservice:4a41c14e814dd6bb6b9f6109d98064facd0846f4bf5e6f6acf3d35d484914554" already present on machine and can be accessed by the pod
+54m         Normal    Pulled              pod/productcatalogservice-7bccb8b4fd-pcdl9    Container image "productcatalogservice:cf0551990661c1f4131d038cd4dcc30e2e3e5553c80dce6dad160323439a99d5" already present on machine and can be accessed by the pod
+51m         Normal    Created             pod/recommendationservice-59f5bd4d4f-k26fv    Container created
+54m         Normal    Created             pod/paymentservice-5bc87896c-96wlv            Container created
+54m         Normal    Pulled              pod/redis-cart-666496787-6hgkx                Container image "redis:alpine" already present on machine and can be accessed by the pod
+51m         Normal    Created             pod/emailservice-778d46b464-hms29             Container created
+54m         Normal    Pulled              pod/shippingservice-855dfcd885-g9pt7          Container image "shippingservice:ba88e9b1bcaef1f6eececc5bec5cdbbeb8c6800280bedf8974e6c142af657bc2" already present on machine and can be accessed by the pod
+54m         Normal    Created             pod/currencyservice-7c887d7c47-gtvzq          Container created
+52m         Normal    Created             pod/cartservice-fc99f955c-99p6v               Container created
+54m         Normal    Created             pod/frontend-7c58b9fd96-kjc9g                 Container created
+54m         Normal    Created             pod/shippingservice-855dfcd885-g9pt7          Container created
+52m         Normal    Created             pod/adservice-697958456d-96ngp                Container created
+54m         Normal    Created             pod/redis-cart-666496787-6hgkx                Container created
+54m         Normal    Created             pod/productcatalogservice-7bccb8b4fd-pcdl9    Container created
+52m         Normal    Started             pod/cartservice-fc99f955c-99p6v               Container started
+54m         Normal    Started             pod/checkoutservice-787cdd8b95-4tlrj          Container started
+51m         Normal    Started             pod/emailservice-778d46b464-hms29             Container started
+54m         Normal    Started             pod/currencyservice-7c887d7c47-gtvzq          Container started
+54m         Normal    Started             pod/paymentservice-5bc87896c-96wlv            Container started
+54m         Normal    Started             pod/frontend-7c58b9fd96-kjc9g                 Container started
+51m         Normal    Started             pod/recommendationservice-59f5bd4d4f-k26fv    Container started
+54m         Normal    Started             pod/redis-cart-666496787-6hgkx                Container started
+54m         Normal    Started             pod/productcatalogservice-7bccb8b4fd-pcdl9    Container started
+54m         Normal    Started             pod/shippingservice-855dfcd885-g9pt7          Container started
+52m         Normal    Started             pod/adservice-697958456d-96ngp                Container started
+15m         Warning   Unhealthy           pod/currencyservice-7c887d7c47-gtvzq          Readiness probe failed: timeout: failed to connect service "10.244.0.18:7000" within 1s: context deadline exceeded
+23m         Warning   Unhealthy           pod/recommendationservice-59f5bd4d4f-k26fv    Readiness probe failed: timeout: failed to connect service "10.244.0.21:8080" within 1s: context deadline exceeded
+15m         Warning   Unhealthy           pod/paymentservice-5bc87896c-96wlv            Readiness probe failed: timeout: failed to connect service "10.244.0.25:50051" within 1s: context deadline exceeded
+53m         Warning   Unhealthy           pod/emailservice-778d46b464-hms29             Liveness probe failed: timeout: failed to connect service "10.244.0.22:8080" within 1s: context deadline exceeded
+29m         Warning   Unhealthy           pod/recommendationservice-59f5bd4d4f-k26fv    Liveness probe failed: timeout: failed to connect service "10.244.0.21:8080" within 1s: context deadline exceeded
+24m         Warning   Unhealthy           pod/emailservice-778d46b464-hms29             Readiness probe failed: timeout: failed to connect service "10.244.0.22:8080" within 1s: context deadline exceeded
+54m         Warning   Unhealthy           pod/currencyservice-7c887d7c47-gtvzq          Liveness probe failed: timeout: failed to connect service "10.244.0.18:7000" within 1s: context deadline exceeded
+54m         Warning   Unhealthy           pod/paymentservice-5bc87896c-96wlv            Liveness probe failed: timeout: failed to connect service "10.244.0.25:50051" within 1s: context deadline exceeded
+24m         Normal    Killing             pod/emailservice-778d46b464-hms29             Container server failed liveness probe, will be restarted
+29m         Normal    Killing             pod/recommendationservice-59f5bd4d4f-k26fv    Container server failed liveness probe, will be restarted
+53m         Warning   Unhealthy           pod/paymentservice-5bc87896c-96wlv            Readiness probe failed: timeout: health rpc did not complete within 1s
+14m         Warning   Unhealthy           pod/cartservice-fc99f955c-99p6v               Readiness probe failed: timeout: failed to connect service "10.244.0.20:7070" within 1s: context deadline exceeded
+52m         Warning   Unhealthy           pod/cartservice-fc99f955c-99p6v               Liveness probe failed: timeout: failed to connect service "10.244.0.20:7070" within 1s: context deadline exceeded
+51m         Warning   Unhealthy           pod/adservice-697958456d-96ngp                Liveness probe failed: timeout: failed to connect service "10.244.0.19:9555" within 1s: context deadline exceeded
+51m         Warning   Unhealthy           pod/adservice-697958456d-96ngp                Readiness probe failed: timeout: failed to connect service "10.244.0.19:9555" within 1s: context deadline exceeded
+53m         Warning   Unhealthy           pod/currencyservice-7c887d7c47-gtvzq          Liveness probe failed: timeout: health rpc did not complete within 1s
+52m         Warning   Unhealthy           pod/cartservice-fc99f955c-99p6v               Readiness probe failed: timeout: health rpc did not complete within 1s
+52m         Warning   Unhealthy           pod/cartservice-fc99f955c-99p6v               Liveness probe failed: timeout: health rpc did not complete within 1s
+52m         Normal    Killing             pod/cartservice-fc99f955c-99p6v               Container server failed liveness probe, will be restarted
+52m         Normal    Killing             pod/adservice-697958456d-96ngp                Container server failed liveness probe, will be restarted
+52m         Warning   Unhealthy           pod/adservice-697958456d-96ngp                Liveness probe failed: timeout: health rpc did not complete within 1s
+51m         Warning   Unhealthy           pod/adservice-697958456d-96ngp                Readiness probe failed: timeout: health rpc did not complete within 1s
+28m         Warning   BackOff             pod/emailservice-778d46b464-hms29             Back-off restarting failed container server in pod emailservice-778d46b464-hms29_default(7598214b-f064-4809-a5b7-a3725cd69d83)
+33m         Warning   BackOff             pod/recommendationservice-59f5bd4d4f-k26fv    Back-off restarting failed container server in pod recommendationservice-59f5bd4d4f-k26fv_default(79f724f6-615f-4452-82bb-bca5a0a82b11)
+22m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled up replica set emailservice-74444c785c from 0 to 1
+22m         Normal    SuccessfulCreate    replicaset/emailservice-74444c785c            Created pod: emailservice-74444c785c-6qkfh
+22m         Normal    Scheduled           pod/emailservice-74444c785c-6qkfh             Successfully assigned default/emailservice-74444c785c-6qkfh to minikube
+22m         Normal    Pulled              pod/emailservice-74444c785c-6qkfh             Container image "emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38" already present on machine and can be accessed by the pod
+22m         Normal    Created             pod/emailservice-74444c785c-6qkfh             Container created
+22m         Normal    Started             pod/emailservice-74444c785c-6qkfh             Container started
+22m         Normal    ScalingReplicaSet   deployment/recommendationservice              Scaled up replica set recommendationservice-ccf7c56 from 0 to 1
+22m         Normal    Scheduled           pod/recommendationservice-ccf7c56-t2r99       Successfully assigned default/recommendationservice-ccf7c56-t2r99 to minikube
+22m         Normal    SuccessfulCreate    replicaset/recommendationservice-ccf7c56      Created pod: recommendationservice-ccf7c56-t2r99
+22m         Normal    Created             pod/recommendationservice-ccf7c56-t2r99       Container created
+22m         Normal    Pulled              pod/recommendationservice-ccf7c56-t2r99       Container image "recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed" already present on machine and can be accessed by the pod
+22m         Normal    Started             pod/recommendationservice-ccf7c56-t2r99       Container started
+21m         Warning   Unhealthy           pod/emailservice-74444c785c-6qkfh             Readiness probe failed: timeout: failed to connect service "10.244.0.29:8080" within 5s: context deadline exceeded
+21m         Warning   Unhealthy           pod/emailservice-74444c785c-6qkfh             Liveness probe failed: timeout: failed to connect service "10.244.0.29:8080" within 5s: context deadline exceeded
+21m         Warning   Unhealthy           pod/recommendationservice-ccf7c56-t2r99       Readiness probe failed: timeout: failed to connect service "10.244.0.30:8080" within 5s: context deadline exceeded
+21m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled down replica set emailservice-778d46b464 from 1 to 0
+21m         Normal    SuccessfulDelete    replicaset/emailservice-778d46b464            Deleted pod: emailservice-778d46b464-hms29
+21m         Warning   Unhealthy           pod/recommendationservice-ccf7c56-t2r99       Liveness probe failed: timeout: failed to connect service "10.244.0.30:8080" within 5s: context deadline exceeded
+21m         Normal    SuccessfulDelete    replicaset/recommendationservice-59f5bd4d4f   Deleted pod: recommendationservice-59f5bd4d4f-k26fv
+21m         Normal    ScalingReplicaSet   deployment/recommendationservice              Scaled down replica set recommendationservice-59f5bd4d4f from 1 to 0
+21m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled up replica set emailservice-64699d7c98 from 0 to 1
+21m         Normal    SuccessfulCreate    replicaset/emailservice-64699d7c98            Created pod: emailservice-64699d7c98-t4w6z
+21m         Normal    Scheduled           pod/emailservice-64699d7c98-t4w6z             Successfully assigned default/emailservice-64699d7c98-t4w6z to minikube
+21m         Normal    Pulled              pod/emailservice-64699d7c98-t4w6z             Container image "emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38" already present on machine and can be accessed by the pod
+21m         Normal    Created             pod/emailservice-64699d7c98-t4w6z             Container created
+21m         Normal    Started             pod/emailservice-64699d7c98-t4w6z             Container started
+20m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled down replica set emailservice-74444c785c from 1 to 0
+20m         Normal    SuccessfulDelete    replicaset/emailservice-74444c785c            Deleted pod: emailservice-74444c785c-6qkfh
+20m         Normal    Killing             pod/emailservice-74444c785c-6qkfh             Stopping container server
+16m         Normal    SuccessfulCreate    replicaset/adservice-686888998c               Created pod: adservice-686888998c-r7hx8
+16m         Normal    ScalingReplicaSet   deployment/adservice                          Scaled up replica set adservice-686888998c from 0 to 1
+16m         Normal    ScalingReplicaSet   deployment/cartservice                        Scaled up replica set cartservice-7bdcb4d778 from 0 to 1
+16m         Normal    SuccessfulCreate    replicaset/cartservice-7bdcb4d778             Created pod: cartservice-7bdcb4d778-sj6tg
+16m         Normal    Scheduled           pod/adservice-686888998c-r7hx8                Successfully assigned default/adservice-686888998c-r7hx8 to minikube
+16m         Normal    SuccessfulCreate    replicaset/checkoutservice-7f5687d59d         Created pod: checkoutservice-7f5687d59d-m6jk2
+16m         Normal    ScalingReplicaSet   deployment/currencyservice                    Scaled up replica set currencyservice-585bc4b96b from 0 to 1
+16m         Normal    Scheduled           pod/checkoutservice-7f5687d59d-m6jk2          Successfully assigned default/checkoutservice-7f5687d59d-m6jk2 to minikube
+16m         Normal    ScalingReplicaSet   deployment/checkoutservice                    Scaled up replica set checkoutservice-7f5687d59d from 0 to 1
+16m         Normal    Scheduled           pod/cartservice-7bdcb4d778-sj6tg              Successfully assigned default/cartservice-7bdcb4d778-sj6tg to minikube
+16m         Normal    Scheduled           pod/currencyservice-585bc4b96b-xhqwc          Successfully assigned default/currencyservice-585bc4b96b-xhqwc to minikube
+16m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled up replica set emailservice-5bd948ddcd from 0 to 1
+16m         Normal    SuccessfulCreate    replicaset/emailservice-5bd948ddcd            Created pod: emailservice-5bd948ddcd-5cnjj
+16m         Normal    SuccessfulCreate    replicaset/currencyservice-585bc4b96b         Created pod: currencyservice-585bc4b96b-xhqwc
+16m         Normal    SuccessfulCreate    replicaset/frontend-54bbbbd749                Created pod: frontend-54bbbbd749-5t7dd
+16m         Normal    Scheduled           pod/frontend-54bbbbd749-5t7dd                 Successfully assigned default/frontend-54bbbbd749-5t7dd to minikube
+16m         Normal    Scheduled           pod/emailservice-5bd948ddcd-5cnjj             Successfully assigned default/emailservice-5bd948ddcd-5cnjj to minikube
+16m         Normal    ScalingReplicaSet   deployment/frontend                           Scaled up replica set frontend-54bbbbd749 from 0 to 1
+16m         Normal    SuccessfulCreate    replicaset/paymentservice-5596f7cddd          Created pod: paymentservice-5596f7cddd-9bj8c
+14m         Normal    Pulled              pod/adservice-686888998c-r7hx8                Container image "adservice:0708ff4156c2940cdae2ae9bf462207800227f140ac6c7f6ac382955cfcf26c7" already present on machine and can be accessed by the pod
+16m         Normal    ScalingReplicaSet   deployment/paymentservice                     Scaled up replica set paymentservice-5596f7cddd from 0 to 1
+16m         Normal    Scheduled           pod/paymentservice-5596f7cddd-9bj8c           Successfully assigned default/paymentservice-5596f7cddd-9bj8c to minikube
+16m         Normal    ScalingReplicaSet   deployment/productcatalogservice              Scaled up replica set productcatalogservice-7b46ffc9ff from 0 to 1
+16m         Normal    SuccessfulCreate    replicaset/productcatalogservice-7b46ffc9ff   Created pod: productcatalogservice-7b46ffc9ff-qmck2
+16m         Normal    ScalingReplicaSet   deployment/recommendationservice              Scaled up replica set recommendationservice-854cf66ff7 from 0 to 1
+15m         Normal    Pulled              pod/cartservice-7bdcb4d778-sj6tg              Container image "cartservice:136278adbdba8be6a2b4250b4e64a8750b7b5bbd1ccce09d3855931b47602d65" already present on machine and can be accessed by the pod
+16m         Normal    SuccessfulCreate    replicaset/recommendationservice-854cf66ff7   Created pod: recommendationservice-854cf66ff7-msf8v
+16m         Normal    Scheduled           pod/productcatalogservice-7b46ffc9ff-qmck2    Successfully assigned default/productcatalogservice-7b46ffc9ff-qmck2 to minikube
+14m         Normal    Created             pod/adservice-686888998c-r7hx8                Container created
+16m         Normal    SuccessfulCreate    replicaset/redis-cart-f4bf8f94                Created pod: redis-cart-f4bf8f94-xqh65
+15m         Normal    Created             pod/cartservice-7bdcb4d778-sj6tg              Container created
+16m         Normal    ScalingReplicaSet   deployment/redis-cart                         Scaled up replica set redis-cart-f4bf8f94 from 0 to 1
+16m         Normal    Scheduled           pod/recommendationservice-854cf66ff7-msf8v    Successfully assigned default/recommendationservice-854cf66ff7-msf8v to minikube
+16m         Normal    SuccessfulCreate    replicaset/shippingservice-748b8bbc5b         Created pod: shippingservice-748b8bbc5b-d8f6d
+16m         Normal    ScalingReplicaSet   deployment/shippingservice                    Scaled up replica set shippingservice-748b8bbc5b from 0 to 1
+16m         Normal    Scheduled           pod/redis-cart-f4bf8f94-xqh65                 Successfully assigned default/redis-cart-f4bf8f94-xqh65 to minikube
+16m         Normal    Scheduled           pod/shippingservice-748b8bbc5b-d8f6d          Successfully assigned default/shippingservice-748b8bbc5b-d8f6d to minikube
+16m         Normal    Pulled              pod/checkoutservice-7f5687d59d-m6jk2          Container image "checkoutservice:ce5338a6eab95163a86d601d36f02ac4141db6f35c59f324c51a96befca2f318" already present on machine and can be accessed by the pod
+16m         Normal    Pulled              pod/currencyservice-585bc4b96b-xhqwc          Container image "currencyservice:052f583ad2d816194b3f68fd60c64ccf16e6516830c66a74c669399237fa247a" already present on machine and can be accessed by the pod
+15m         Normal    Started             pod/cartservice-7bdcb4d778-sj6tg              Container started
+14m         Normal    Started             pod/adservice-686888998c-r7hx8                Container started
+16m         Normal    Created             pod/currencyservice-585bc4b96b-xhqwc          Container created
+15m         Normal    Pulled              pod/emailservice-5bd948ddcd-5cnjj             Container image "emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38" already present on machine and can be accessed by the pod
+16m         Normal    Created             pod/checkoutservice-7f5687d59d-m6jk2          Container created
+15m         Normal    Created             pod/emailservice-5bd948ddcd-5cnjj             Container created
+16m         Normal    Started             pod/currencyservice-585bc4b96b-xhqwc          Container started
+16m         Normal    Started             pod/checkoutservice-7f5687d59d-m6jk2          Container started
+16m         Normal    Pulled              pod/frontend-54bbbbd749-5t7dd                 Container image "frontend:78bc8567851f295ddea0cc56e5a9e522674948b6fc1355ff97c61e3e65a004a7" already present on machine and can be accessed by the pod
+16m         Normal    Created             pod/frontend-54bbbbd749-5t7dd                 Container created
+15m         Normal    Started             pod/emailservice-5bd948ddcd-5cnjj             Container started
+16m         Normal    Pulled              pod/productcatalogservice-7b46ffc9ff-qmck2    Container image "productcatalogservice:cf0551990661c1f4131d038cd4dcc30e2e3e5553c80dce6dad160323439a99d5" already present on machine and can be accessed by the pod
+16m         Normal    Pulled              pod/paymentservice-5596f7cddd-9bj8c           Container image "paymentservice:4a41c14e814dd6bb6b9f6109d98064facd0846f4bf5e6f6acf3d35d484914554" already present on machine and can be accessed by the pod
+15m         Normal    Pulled              pod/recommendationservice-854cf66ff7-msf8v    Container image "recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed" already present on machine and can be accessed by the pod
+16m         Normal    ScalingReplicaSet   deployment/checkoutservice                    Scaled down replica set checkoutservice-787cdd8b95 from 1 to 0
+16m         Warning   Unhealthy           pod/currencyservice-585bc4b96b-xhqwc          Readiness probe failed: timeout: failed to connect service "10.244.0.35:7000" within 1s: context deadline exceeded
+16m         Normal    Started             pod/frontend-54bbbbd749-5t7dd                 Container started
+16m         Normal    Created             pod/productcatalogservice-7b46ffc9ff-qmck2    Container created
+16m         Normal    SuccessfulDelete    replicaset/checkoutservice-787cdd8b95         Deleted pod: checkoutservice-787cdd8b95-4tlrj
+16m         Normal    Killing             pod/checkoutservice-787cdd8b95-4tlrj          Stopping container server
+16m         Normal    Pulled              pod/redis-cart-f4bf8f94-xqh65                 Container image "redis:alpine" already present on machine and can be accessed by the pod
+16m         Warning   Unhealthy           pod/currencyservice-585bc4b96b-xhqwc          Liveness probe failed: timeout: failed to connect service "10.244.0.35:7000" within 1s: context deadline exceeded
+16m         Normal    Pulled              pod/shippingservice-748b8bbc5b-d8f6d          Container image "shippingservice:ba88e9b1bcaef1f6eececc5bec5cdbbeb8c6800280bedf8974e6c142af657bc2" already present on machine and can be accessed by the pod
+16m         Normal    Created             pod/paymentservice-5596f7cddd-9bj8c           Container created
+15m         Normal    Created             pod/recommendationservice-854cf66ff7-msf8v    Container created
+16m         Normal    Created             pod/redis-cart-f4bf8f94-xqh65                 Container created
+16m         Normal    Created             pod/shippingservice-748b8bbc5b-d8f6d          Container created
+16m         Normal    Started             pod/productcatalogservice-7b46ffc9ff-qmck2    Container started
+16m         Normal    Started             pod/paymentservice-5596f7cddd-9bj8c           Container started
+16m         Warning   Unhealthy           pod/checkoutservice-787cdd8b95-4tlrj          Readiness probe failed: timeout: failed to connect service "10.244.0.17:5050" within 1s: context deadline exceeded
+16m         Normal    Started             pod/redis-cart-f4bf8f94-xqh65                 Container started
+15m         Normal    Started             pod/recommendationservice-854cf66ff7-msf8v    Container started
+16m         Normal    Started             pod/shippingservice-748b8bbc5b-d8f6d          Container started
+16m         Warning   Unhealthy           pod/redis-cart-f4bf8f94-xqh65                 Readiness probe failed: dial tcp 10.244.0.41:6379: connect: connection refused
+16m         Warning   Unhealthy           pod/paymentservice-5596f7cddd-9bj8c           Readiness probe failed: timeout: failed to connect service "10.244.0.38:50051" within 1s: context deadline exceeded
+16m         Normal    ScalingReplicaSet   deployment/productcatalogservice              Scaled down replica set productcatalogservice-7bccb8b4fd from 1 to 0
+16m         Normal    Killing             pod/productcatalogservice-7bccb8b4fd-pcdl9    Stopping container server
+16m         Normal    SuccessfulDelete    replicaset/productcatalogservice-7bccb8b4fd   Deleted pod: productcatalogservice-7bccb8b4fd-pcdl9
+15m         Warning   Unhealthy           pod/cartservice-7bdcb4d778-sj6tg              Readiness probe failed: timeout: failed to connect service "10.244.0.33:7070" within 1s: context deadline exceeded
+14m         Warning   Unhealthy           pod/adservice-686888998c-r7hx8                Readiness probe failed: timeout: failed to connect service "10.244.0.32:9555" within 1s: context deadline exceeded
+13m         Warning   Unhealthy           pod/adservice-686888998c-r7hx8                Liveness probe failed: timeout: failed to connect service "10.244.0.32:9555" within 1s: context deadline exceeded
+15m         Warning   Unhealthy           pod/cartservice-7bdcb4d778-sj6tg              Liveness probe failed: timeout: failed to connect service "10.244.0.33:7070" within 1s: context deadline exceeded
+16m         Normal    SuccessfulDelete    replicaset/shippingservice-855dfcd885         Deleted pod: shippingservice-855dfcd885-g9pt7
+16m         Normal    ScalingReplicaSet   deployment/shippingservice                    Scaled down replica set shippingservice-855dfcd885 from 1 to 0
+16m         Normal    Killing             pod/shippingservice-855dfcd885-g9pt7          Stopping container server
+16m         Warning   Unhealthy           pod/paymentservice-5596f7cddd-9bj8c           Liveness probe failed: timeout: failed to connect service "10.244.0.38:50051" within 1s: context deadline exceeded
+16m         Normal    ScalingReplicaSet   deployment/redis-cart                         Scaled down replica set redis-cart-666496787 from 1 to 0
+16m         Normal    SuccessfulDelete    replicaset/redis-cart-666496787               Deleted pod: redis-cart-666496787-6hgkx
+16m         Normal    Killing             pod/redis-cart-666496787-6hgkx                Stopping container redis
+16m         Normal    ScalingReplicaSet   deployment/frontend                           Scaled down replica set frontend-7c58b9fd96 from 1 to 0
+16m         Normal    SuccessfulDelete    replicaset/frontend-7c58b9fd96                Deleted pod: frontend-7c58b9fd96-kjc9g
+16m         Warning   Unhealthy           pod/redis-cart-666496787-6hgkx                Readiness probe failed: dial tcp 10.244.0.26:6379: i/o timeout
+16m         Normal    Killing             pod/frontend-7c58b9fd96-kjc9g                 Stopping container server
+16m         Warning   Unhealthy           pod/currencyservice-585bc4b96b-xhqwc          Readiness probe failed: timeout: health rpc did not complete within 1s
+14m         Warning   Unhealthy           pod/emailservice-5bd948ddcd-5cnjj             Readiness probe failed: timeout: failed to connect service "10.244.0.36:8080" within 5s: context deadline exceeded
+15m         Warning   Unhealthy           pod/paymentservice-5596f7cddd-9bj8c           Liveness probe failed: timeout: health rpc did not complete within 1s
+15m         Warning   Unhealthy           pod/cartservice-7bdcb4d778-sj6tg              Readiness probe failed: timeout: health rpc did not complete within 1s
+15m         Normal    ScalingReplicaSet   deployment/currencyservice                    Scaled down replica set currencyservice-7c887d7c47 from 1 to 0
+15m         Normal    ScalingReplicaSet   deployment/paymentservice                     Scaled down replica set paymentservice-5bc87896c from 1 to 0
+15m         Warning   Unhealthy           pod/cartservice-7bdcb4d778-sj6tg              Liveness probe failed: timeout: health rpc did not complete within 1s
+15m         Normal    SuccessfulDelete    replicaset/paymentservice-5bc87896c           Deleted pod: paymentservice-5bc87896c-96wlv
+14m         Warning   Unhealthy           pod/recommendationservice-854cf66ff7-msf8v    Readiness probe failed: timeout: failed to connect service "10.244.0.39:8080" within 5s: context deadline exceeded
+15m         Normal    SuccessfulDelete    replicaset/currencyservice-7c887d7c47         Deleted pod: currencyservice-7c887d7c47-gtvzq
+15m         Normal    Killing             pod/currencyservice-7c887d7c47-gtvzq          Stopping container server
+15m         Normal    Killing             pod/cartservice-7bdcb4d778-sj6tg              Container server failed liveness probe, will be restarted
+15m         Normal    Killing             pod/paymentservice-5bc87896c-96wlv            Stopping container server
+14m         Warning   Unhealthy           pod/emailservice-5bd948ddcd-5cnjj             Liveness probe failed: timeout: failed to connect service "10.244.0.36:8080" within 5s: context deadline exceeded
+14m         Warning   Unhealthy           pod/recommendationservice-854cf66ff7-msf8v    Liveness probe failed: timeout: failed to connect service "10.244.0.39:8080" within 5s: context deadline exceeded
+14m         Normal    Killing             pod/adservice-686888998c-r7hx8                Container server failed liveness probe, will be restarted
+15m         Normal    Killing             pod/emailservice-5bd948ddcd-5cnjj             Container server failed liveness probe, will be restarted
+15m         Normal    Killing             pod/recommendationservice-854cf66ff7-msf8v    Container server failed liveness probe, will be restarted
+15m         Normal    ScalingReplicaSet   deployment/recommendationservice              Scaled down replica set recommendationservice-ccf7c56 from 1 to 0
+15m         Normal    SuccessfulDelete    replicaset/recommendationservice-ccf7c56      Deleted pod: recommendationservice-ccf7c56-t2r99
+15m         Normal    Killing             pod/recommendationservice-ccf7c56-t2r99       Stopping container server
+14m         Normal    ScalingReplicaSet   deployment/cartservice                        Scaled down replica set cartservice-fc99f955c from 1 to 0
+14m         Normal    SuccessfulDelete    replicaset/cartservice-fc99f955c              Deleted pod: cartservice-fc99f955c-99p6v
+14m         Normal    Killing             pod/cartservice-fc99f955c-99p6v               Stopping container server
+14m         Warning   Unhealthy           pod/adservice-686888998c-r7hx8                Liveness probe failed: timeout: health rpc did not complete within 1s
+14m         Normal    ScalingReplicaSet   deployment/emailservice                       Scaled down replica set emailservice-64699d7c98 from 1 to 0
+14m         Normal    Killing             pod/emailservice-64699d7c98-t4w6z             Stopping container server
+14m         Normal    SuccessfulDelete    replicaset/emailservice-64699d7c98            Deleted pod: emailservice-64699d7c98-t4w6z
+13m         Warning   Unhealthy           pod/adservice-686888998c-r7hx8                Readiness probe failed: timeout: health rpc did not complete within 1s
+13m         Normal    ScalingReplicaSet   deployment/adservice                          Scaled down replica set adservice-697958456d from 1 to 0
+13m         Normal    SuccessfulDelete    replicaset/adservice-697958456d               Deleted pod: adservice-697958456d-96ngp
+13m         Normal    Killing             pod/adservice-697958456d-96ngp                Stopping container server
+13m         Normal    SuccessfulCreate    replicaset/loadgenerator-868f944c96           Created pod: loadgenerator-868f944c96-mwk9m
+13m         Normal    Scheduled           pod/loadgenerator-868f944c96-mwk9m            Successfully assigned default/loadgenerator-868f944c96-mwk9m to minikube
+13m         Normal    ScalingReplicaSet   deployment/loadgenerator                      Scaled up replica set loadgenerator-868f944c96 from 0 to 1
+13m         Normal    Pulled              pod/loadgenerator-868f944c96-mwk9m            Container image "busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d" already present on machine and can be accessed by the pod
+13m         Normal    Started             pod/loadgenerator-868f944c96-mwk9m            Container started
+13m         Normal    Created             pod/loadgenerator-868f944c96-mwk9m            Container created
+13m         Normal    Pulled              pod/loadgenerator-868f944c96-mwk9m            Container image "loadgenerator:b7df724f4c3c75f97e77adfe0f4170aabb619730109939874eb2b9dd131760e3" already present on machine and can be accessed by the pod
+13m         Normal    Started             pod/loadgenerator-868f944c96-mwk9m            Container started
+13m         Normal    Created             pod/loadgenerator-868f944c96-mwk9m            Container created

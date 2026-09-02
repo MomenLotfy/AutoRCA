@@ -1,0 +1,1375 @@
+apiVersion: v1
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"adservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"adservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"adservice"}},"template":{"metadata":{"labels":{"app":"adservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"9555"}],"image":"adservice:0708ff4156c2940cdae2ae9bf462207800227f140ac6c7f6ac382955cfcf26c7","livenessProbe":{"grpc":{"port":9555},"initialDelaySeconds":20,"periodSeconds":15},"name":"server","ports":[{"containerPort":9555}],"readinessProbe":{"grpc":{"port":9555},"initialDelaySeconds":20,"periodSeconds":15},"resources":{"limits":{"cpu":"300m","memory":"300Mi"},"requests":{"cpu":"200m","memory":"180Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"adservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: adservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: adservice
+    namespace: default
+    resourceVersion: "12285"
+    uid: 78abe9fb-3ef6-46c3-b1b7-4253575a9566
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: adservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: adservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "9555"
+          image: adservice:0708ff4156c2940cdae2ae9bf462207800227f140ac6c7f6ac382955cfcf26c7
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 9555
+              service: ""
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 9555
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 9555
+              service: ""
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 300m
+              memory: 300Mi
+            requests:
+              cpu: 200m
+              memory: 180Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: adservice
+        serviceAccountName: adservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:37:47Z"
+      lastUpdateTime: "2026-08-31T22:37:47Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:15:23Z"
+      message: ReplicaSet "adservice-686888998c" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"cartservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"cartservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"cartservice"}},"template":{"metadata":{"labels":{"app":"cartservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"REDIS_ADDR","value":"redis-cart:6379"}],"image":"cartservice:136278adbdba8be6a2b4250b4e64a8750b7b5bbd1ccce09d3855931b47602d65","livenessProbe":{"grpc":{"port":7070},"initialDelaySeconds":15,"periodSeconds":10},"name":"server","ports":[{"containerPort":7070}],"readinessProbe":{"grpc":{"port":7070},"initialDelaySeconds":15},"resources":{"limits":{"cpu":"300m","memory":"128Mi"},"requests":{"cpu":"200m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"cartservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: cartservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: cartservice
+    namespace: default
+    resourceVersion: "12138"
+    uid: f6252c96-6eea-49b3-a7b9-65128a77692d
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: cartservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: cartservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: REDIS_ADDR
+            value: redis-cart:6379
+          image: cartservice:136278adbdba8be6a2b4250b4e64a8750b7b5bbd1ccce09d3855931b47602d65
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 7070
+              service: ""
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 7070
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 7070
+              service: ""
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 300m
+              memory: 128Mi
+            requests:
+              cpu: 200m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: cartservice
+        serviceAccountName: cartservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:37:05Z"
+      lastUpdateTime: "2026-08-31T22:37:05Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:14:02Z"
+      message: ReplicaSet "cartservice-7bdcb4d778" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"checkoutservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"checkoutservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"checkoutservice"}},"template":{"metadata":{"labels":{"app":"checkoutservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"5050"},{"name":"PRODUCT_CATALOG_SERVICE_ADDR","value":"productcatalogservice:3550"},{"name":"SHIPPING_SERVICE_ADDR","value":"shippingservice:50051"},{"name":"PAYMENT_SERVICE_ADDR","value":"paymentservice:50051"},{"name":"EMAIL_SERVICE_ADDR","value":"emailservice:5000"},{"name":"CURRENCY_SERVICE_ADDR","value":"currencyservice:7000"},{"name":"CART_SERVICE_ADDR","value":"cartservice:7070"}],"image":"checkoutservice:ce5338a6eab95163a86d601d36f02ac4141db6f35c59f324c51a96befca2f318","livenessProbe":{"grpc":{"port":5050}},"name":"server","ports":[{"containerPort":5050}],"readinessProbe":{"grpc":{"port":5050}},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"checkoutservice"}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: checkoutservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: checkoutservice
+    namespace: default
+    resourceVersion: "11783"
+    uid: eeaabae2-89eb-45ab-81bf-4580f9095145
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: checkoutservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: checkoutservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "5050"
+          - name: PRODUCT_CATALOG_SERVICE_ADDR
+            value: productcatalogservice:3550
+          - name: SHIPPING_SERVICE_ADDR
+            value: shippingservice:50051
+          - name: PAYMENT_SERVICE_ADDR
+            value: paymentservice:50051
+          - name: EMAIL_SERVICE_ADDR
+            value: emailservice:5000
+          - name: CURRENCY_SERVICE_ADDR
+            value: currencyservice:7000
+          - name: CART_SERVICE_ADDR
+            value: cartservice:7070
+          image: checkoutservice:ce5338a6eab95163a86d601d36f02ac4141db6f35c59f324c51a96befca2f318
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 5050
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 5050
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 5050
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: checkoutservice
+        serviceAccountName: checkoutservice
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:34:50Z"
+      lastUpdateTime: "2026-08-31T22:34:50Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:12:37Z"
+      message: ReplicaSet "checkoutservice-7f5687d59d" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"currencyservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"currencyservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"currencyservice"}},"template":{"metadata":{"labels":{"app":"currencyservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"7000"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"currencyservice:052f583ad2d816194b3f68fd60c64ccf16e6516830c66a74c669399237fa247a","livenessProbe":{"grpc":{"port":7000}},"name":"server","ports":[{"containerPort":7000,"name":"grpc"}],"readinessProbe":{"grpc":{"port":7000}},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"currencyservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: currencyservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: currencyservice
+    namespace: default
+    resourceVersion: "11996"
+    uid: bbb9d1ca-2827-44e3-a7b8-7ceb81cd1c50
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: currencyservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: currencyservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "7000"
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: currencyservice:052f583ad2d816194b3f68fd60c64ccf16e6516830c66a74c669399237fa247a
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 7000
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 7000
+            name: grpc
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 7000
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: currencyservice
+        serviceAccountName: currencyservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:35:15Z"
+      lastUpdateTime: "2026-08-31T22:35:15Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:13:08Z"
+      message: ReplicaSet "currencyservice-585bc4b96b" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "4"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"emailservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"emailservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"emailservice"}},"template":{"metadata":{"labels":{"app":"emailservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"8080"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38","livenessProbe":{"grpc":{"port":8080},"periodSeconds":5},"name":"server","ports":[{"containerPort":8080}],"readinessProbe":{"grpc":{"port":8080},"periodSeconds":5},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"emailservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 4
+    labels:
+      app: emailservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: emailservice
+    namespace: default
+    resourceVersion: "12222"
+    uid: 1c68574d-7676-407c-8918-7b6af5dc2237
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: emailservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: emailservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "8080"
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: emailservice:048167e61a6cc535d06289a26e5ae5108c3dcaecb800eed01bcb48f2c378ec38
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 6
+            grpc:
+              port: 8080
+              service: ""
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: server
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 6
+            grpc:
+              port: 8080
+              service: ""
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: emailservice
+        serviceAccountName: emailservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T23:07:17Z"
+      lastUpdateTime: "2026-08-31T23:07:17Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T23:06:20Z"
+      lastUpdateTime: "2026-08-31T23:14:34Z"
+      message: ReplicaSet "emailservice-5bd948ddcd" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 4
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"frontend","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"frontend","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"frontend"}},"template":{"metadata":{"annotations":{"sidecar.istio.io/rewriteAppHTTPProbers":"true"},"labels":{"app":"frontend","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"8080"},{"name":"PRODUCT_CATALOG_SERVICE_ADDR","value":"productcatalogservice:3550"},{"name":"CURRENCY_SERVICE_ADDR","value":"currencyservice:7000"},{"name":"CART_SERVICE_ADDR","value":"cartservice:7070"},{"name":"RECOMMENDATION_SERVICE_ADDR","value":"recommendationservice:8080"},{"name":"SHIPPING_SERVICE_ADDR","value":"shippingservice:50051"},{"name":"CHECKOUT_SERVICE_ADDR","value":"checkoutservice:5050"},{"name":"AD_SERVICE_ADDR","value":"adservice:9555"},{"name":"SHOPPING_ASSISTANT_SERVICE_ADDR","value":"shoppingassistantservice:80"},{"name":"ENABLE_PROFILER","value":"0"}],"image":"frontend:78bc8567851f295ddea0cc56e5a9e522674948b6fc1355ff97c61e3e65a004a7","livenessProbe":{"httpGet":{"httpHeaders":[{"name":"Cookie","value":"shop_session-id=x-liveness-probe"}],"path":"/_healthz","port":8080},"initialDelaySeconds":10},"name":"server","ports":[{"containerPort":8080}],"readinessProbe":{"httpGet":{"httpHeaders":[{"name":"Cookie","value":"shop_session-id=x-readiness-probe"}],"path":"/_healthz","port":8080},"initialDelaySeconds":10},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"frontend"}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: frontend
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: frontend
+    namespace: default
+    resourceVersion: "11930"
+    uid: d78349d9-6a63-4e67-b007-ab439e1c7392
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: frontend
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        labels:
+          app: frontend
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "8080"
+          - name: PRODUCT_CATALOG_SERVICE_ADDR
+            value: productcatalogservice:3550
+          - name: CURRENCY_SERVICE_ADDR
+            value: currencyservice:7000
+          - name: CART_SERVICE_ADDR
+            value: cartservice:7070
+          - name: RECOMMENDATION_SERVICE_ADDR
+            value: recommendationservice:8080
+          - name: SHIPPING_SERVICE_ADDR
+            value: shippingservice:50051
+          - name: CHECKOUT_SERVICE_ADDR
+            value: checkoutservice:5050
+          - name: AD_SERVICE_ADDR
+            value: adservice:9555
+          - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+            value: shoppingassistantservice:80
+          - name: ENABLE_PROFILER
+            value: "0"
+          image: frontend:78bc8567851f295ddea0cc56e5a9e522674948b6fc1355ff97c61e3e65a004a7
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              httpHeaders:
+              - name: Cookie
+                value: shop_session-id=x-liveness-probe
+              path: /_healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              httpHeaders:
+              - name: Cookie
+                value: shop_session-id=x-readiness-probe
+              path: /_healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: frontend
+        serviceAccountName: frontend
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:35:06Z"
+      lastUpdateTime: "2026-08-31T22:35:06Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:12:56Z"
+      message: ReplicaSet "frontend-54bbbbd749" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"loadgenerator","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"loadgenerator","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"loadgenerator"}},"template":{"metadata":{"annotations":{"sidecar.istio.io/rewriteAppHTTPProbers":"true"},"labels":{"app":"loadgenerator","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"FRONTEND_ADDR","value":"frontend:80"},{"name":"USERS","value":"10"},{"name":"RATE","value":"1"}],"image":"loadgenerator:b7df724f4c3c75f97e77adfe0f4170aabb619730109939874eb2b9dd131760e3","name":"main","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"300m","memory":"256Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"initContainers":[{"command":["/bin/sh","-exc","MAX_RETRIES=12\nRETRY_INTERVAL=10\nfor i in $(seq 1 $MAX_RETRIES); do\n  echo \"Attempt $i: Pinging frontend: ${FRONTEND_ADDR}...\"\n  STATUSCODE=$(wget --server-response http://${FRONTEND_ADDR} 2\u003e\u00261 | awk '/^  HTTP/{print $2}')\n  if [ $STATUSCODE -eq 200 ]; then\n      echo \"Frontend is reachable.\"\n      exit 0\n  fi\n  echo \"Error: Could not reach frontend - Status code: ${STATUSCODE}\"\n  sleep $RETRY_INTERVAL\ndone\necho \"Failed to reach frontend after $MAX_RETRIES attempts.\"\nexit 1\n"],"env":[{"name":"FRONTEND_ADDR","value":"frontend:80"}],"image":"busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d","name":"frontend-check","securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"restartPolicy":"Always","securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"loadgenerator","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T23:15:26Z"
+    generation: 1
+    labels:
+      app: loadgenerator
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: loadgenerator
+    namespace: default
+    resourceVersion: "12323"
+    uid: adb74666-9c17-4ec1-a75e-1b958ce5bafc
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: loadgenerator
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        labels:
+          app: loadgenerator
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: FRONTEND_ADDR
+            value: frontend:80
+          - name: USERS
+            value: "10"
+          - name: RATE
+            value: "1"
+          image: loadgenerator:b7df724f4c3c75f97e77adfe0f4170aabb619730109939874eb2b9dd131760e3
+          imagePullPolicy: IfNotPresent
+          name: main
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 300m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        initContainers:
+        - command:
+          - /bin/sh
+          - -exc
+          - |
+            MAX_RETRIES=12
+            RETRY_INTERVAL=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              echo "Attempt $i: Pinging frontend: ${FRONTEND_ADDR}..."
+              STATUSCODE=$(wget --server-response http://${FRONTEND_ADDR} 2>&1 | awk '/^  HTTP/{print $2}')
+              if [ $STATUSCODE -eq 200 ]; then
+                  echo "Frontend is reachable."
+                  exit 0
+              fi
+              echo "Error: Could not reach frontend - Status code: ${STATUSCODE}"
+              sleep $RETRY_INTERVAL
+            done
+            echo "Failed to reach frontend after $MAX_RETRIES attempts."
+            exit 1
+          env:
+          - name: FRONTEND_ADDR
+            value: frontend:80
+          image: busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+          imagePullPolicy: IfNotPresent
+          name: frontend-check
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: loadgenerator
+        serviceAccountName: loadgenerator
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T23:15:39Z"
+      lastUpdateTime: "2026-08-31T23:15:39Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T23:15:26Z"
+      lastUpdateTime: "2026-08-31T23:15:39Z"
+      message: ReplicaSet "loadgenerator-868f944c96" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"paymentservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"paymentservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"paymentservice"}},"template":{"metadata":{"labels":{"app":"paymentservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"50051"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"paymentservice:4a41c14e814dd6bb6b9f6109d98064facd0846f4bf5e6f6acf3d35d484914554","livenessProbe":{"grpc":{"port":50051}},"name":"server","ports":[{"containerPort":50051}],"readinessProbe":{"grpc":{"port":50051}},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"paymentservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: paymentservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: paymentservice
+    namespace: default
+    resourceVersion: "12010"
+    uid: da735134-1107-434d-82f8-1620bdd58f68
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: paymentservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: paymentservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "50051"
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: paymentservice:4a41c14e814dd6bb6b9f6109d98064facd0846f4bf5e6f6acf3d35d484914554
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 50051
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 50051
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 50051
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: paymentservice
+        serviceAccountName: paymentservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:35:16Z"
+      lastUpdateTime: "2026-08-31T22:35:16Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:13:08Z"
+      message: ReplicaSet "paymentservice-5596f7cddd" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"productcatalogservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"productcatalogservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"productcatalogservice"}},"template":{"metadata":{"labels":{"app":"productcatalogservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"3550"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"productcatalogservice:cf0551990661c1f4131d038cd4dcc30e2e3e5553c80dce6dad160323439a99d5","livenessProbe":{"grpc":{"port":3550}},"name":"server","ports":[{"containerPort":3550}],"readinessProbe":{"grpc":{"port":3550}},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"productcatalogservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 2
+    labels:
+      app: productcatalogservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: productcatalogservice
+    namespace: default
+    resourceVersion: "11882"
+    uid: c555a839-9992-4cdf-9315-db6fa01e5b8f
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: productcatalogservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: productcatalogservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "3550"
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: productcatalogservice:cf0551990661c1f4131d038cd4dcc30e2e3e5553c80dce6dad160323439a99d5
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 3550
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 3550
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 3550
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: productcatalogservice
+        serviceAccountName: productcatalogservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:34:56Z"
+      lastUpdateTime: "2026-08-31T22:34:56Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:37Z"
+      lastUpdateTime: "2026-08-31T23:12:45Z"
+      message: ReplicaSet "productcatalogservice-7b46ffc9ff" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "3"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"recommendationservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"recommendationservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"recommendationservice"}},"template":{"metadata":{"labels":{"app":"recommendationservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"8080"},{"name":"PRODUCT_CATALOG_SERVICE_ADDR","value":"productcatalogservice:3550"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed","livenessProbe":{"grpc":{"port":8080},"periodSeconds":5},"name":"server","ports":[{"containerPort":8080}],"readinessProbe":{"grpc":{"port":8080},"periodSeconds":5},"resources":{"limits":{"cpu":"200m","memory":"450Mi"},"requests":{"cpu":"100m","memory":"220Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"recommendationservice","terminationGracePeriodSeconds":5}}}}
+    creationTimestamp: "2026-08-31T22:34:37Z"
+    generation: 3
+    labels:
+      app: recommendationservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: recommendationservice
+    namespace: default
+    resourceVersion: "12217"
+    uid: 4147aa8f-edae-46e0-b34e-a473df83b431
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: recommendationservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: recommendationservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "8080"
+          - name: PRODUCT_CATALOG_SERVICE_ADDR
+            value: productcatalogservice:3550
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: recommendationservice:c5269a84904363cc585cf485364bb2c308f758420b33d3bad1004235998de6ed
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 6
+            grpc:
+              port: 8080
+              service: ""
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: server
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 6
+            grpc:
+              port: 8080
+              service: ""
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 200m
+              memory: 450Mi
+            requests:
+              cpu: 100m
+              memory: 220Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: recommendationservice
+        serviceAccountName: recommendationservice
+        terminationGracePeriodSeconds: 5
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T23:06:42Z"
+      lastUpdateTime: "2026-08-31T23:13:44Z"
+      message: ReplicaSet "recommendationservice-854cf66ff7" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2026-08-31T23:14:40Z"
+      lastUpdateTime: "2026-08-31T23:14:40Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 3
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"redis-cart","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"redis-cart","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"redis-cart"}},"template":{"metadata":{"labels":{"app":"redis-cart","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"image":"redis:alpine","livenessProbe":{"periodSeconds":5,"tcpSocket":{"port":6379}},"name":"redis","ports":[{"containerPort":6379}],"readinessProbe":{"periodSeconds":5,"tcpSocket":{"port":6379}},"resources":{"limits":{"cpu":"125m","memory":"256Mi"},"requests":{"cpu":"70m","memory":"200Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true},"volumeMounts":[{"mountPath":"/data","name":"redis-data"}]}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"volumes":[{"emptyDir":{},"name":"redis-data"}]}}}}
+    creationTimestamp: "2026-08-31T22:34:38Z"
+    generation: 2
+    labels:
+      app: redis-cart
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: redis-cart
+    namespace: default
+    resourceVersion: "11918"
+    uid: ce4f9815-682b-4f25-b862-cd082e9cfe6b
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: redis-cart
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: redis-cart
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - image: redis:alpine
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            periodSeconds: 5
+            successThreshold: 1
+            tcpSocket:
+              port: 6379
+            timeoutSeconds: 1
+          name: redis
+          ports:
+          - containerPort: 6379
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 5
+            successThreshold: 1
+            tcpSocket:
+              port: 6379
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 125m
+              memory: 256Mi
+            requests:
+              cpu: 70m
+              memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /data
+            name: redis-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: redis-data
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:34:57Z"
+      lastUpdateTime: "2026-08-31T22:34:57Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:38Z"
+      lastUpdateTime: "2026-08-31T23:12:56Z"
+      message: ReplicaSet "redis-cart-f4bf8f94" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "2"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"shippingservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"},"name":"shippingservice","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"shippingservice"}},"template":{"metadata":{"labels":{"app":"shippingservice","skaffold.dev/run-id":"0ddd933a-c6da-4cc4-9536-2563a43df686"}},"spec":{"containers":[{"env":[{"name":"PORT","value":"50051"},{"name":"DISABLE_PROFILER","value":"1"}],"image":"shippingservice:ba88e9b1bcaef1f6eececc5bec5cdbbeb8c6800280bedf8974e6c142af657bc2","livenessProbe":{"grpc":{"port":50051}},"name":"server","ports":[{"containerPort":50051}],"readinessProbe":{"grpc":{"port":50051},"periodSeconds":5},"resources":{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}}],"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"shippingservice"}}}}
+    creationTimestamp: "2026-08-31T22:34:38Z"
+    generation: 2
+    labels:
+      app: shippingservice
+      skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+    name: shippingservice
+    namespace: default
+    resourceVersion: "11907"
+    uid: 544fe3a5-b5e7-4601-845c-fc32fc2de982
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: shippingservice
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: shippingservice
+          skaffold.dev/run-id: 0ddd933a-c6da-4cc4-9536-2563a43df686
+      spec:
+        containers:
+        - env:
+          - name: PORT
+            value: "50051"
+          - name: DISABLE_PROFILER
+            value: "1"
+          image: shippingservice:ba88e9b1bcaef1f6eececc5bec5cdbbeb8c6800280bedf8974e6c142af657bc2
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 50051
+              service: ""
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: server
+          ports:
+          - containerPort: 50051
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            grpc:
+              port: 50051
+              service: ""
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        serviceAccount: shippingservice
+        serviceAccountName: shippingservice
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2026-08-31T22:34:54Z"
+      lastUpdateTime: "2026-08-31T22:34:54Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2026-08-31T22:34:38Z"
+      lastUpdateTime: "2026-08-31T23:12:50Z"
+      message: ReplicaSet "shippingservice-748b8bbc5b" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    terminatingReplicas: 0
+    updatedReplicas: 1
+kind: List
+metadata:
+  resourceVersion: ""

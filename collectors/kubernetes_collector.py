@@ -52,8 +52,13 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import logging
 import os
+import logging
+try:
+    import yaml
+except ImportError:
+    yaml = None
+from pathlib import Path
 import re
 import socket
 from typing import Any, Dict, List, Optional, Tuple
@@ -484,17 +489,39 @@ class KubernetesCollector(BaseCollector):
     # Secrets
     # ------------------------------------------------------------------
     def _resolve_secret(self) -> Optional[str]:
+        """Resolve a bearer token for the Kubernetes API.
+
+        The resolution order is:
+        1. If ``auth_env`` is set and the corresponding environment variable
+           contains a non‑empty value, use that.
+        2. Otherwise, attempt to load the current context from a kubeconfig file
+           (``KUBECONFIG`` env var or ``~/.kube/config``) and extract a token.
+           Supports the classic ``users[].user.token`` field and the
+           ``auth-provider`` ``access-token`` sub‑field.
+        3. If neither yields a token, ``None`` is returned – the collector will
+           make unauthenticated requests, which will typically fail with a 401
+           (handled elsewhere).
+        """
         if self._secret_resolved:
             return self._cached_secret
         self._secret_resolved = True
+        # 1. Explicit env var via auth_env.
         name = self._config.auth_env
-        if not name:
-            return None
-        value = os.environ.get(name)
-        if not value:
-            return None
-        self._cached_secret = value
-        return value
+        if name:
+            value = os.environ.get(name)
+            if value:
+                self._cached_secret = value
+                return value
+        # 2. Fallback to kubeconfig.
+        try:
+            token = _load_kubeconfig_token()
+            if token:
+                self._cached_secret = token
+                return token
+        except Exception:
+            # Any parsing issue is ignored – we simply return None.
+            pass
+        return None
 
     def _build_headers(self, secret: Optional[str]) -> Dict[str, str]:
         headers: Dict[str, str] = {
@@ -586,11 +613,33 @@ def _in_window(
     start: Optional[dt.datetime],
     end: Optional[dt.datetime],
 ) -> bool:
+    """Return True if *ts* lies within the optional [start, end] window.
+
+    All datetime arguments are normalized to UTC before comparison:
+    * Naive datetimes are assumed to be UTC.
+    * Aware datetimes are converted to UTC.
+    This prevents ``TypeError: can't compare offset-naive and offset-aware``
+    when pod/event timestamps have different tzinfo than the incident window.
+    """
     if ts is None:
         return True  # permissive: K8s sometimes returns null ts
-    if start is not None and ts < start:
+
+    def _ensure_utc(d: Optional[dt.datetime]) -> Optional[dt.datetime]:
+        if d is None:
+            return None
+        if d.tzinfo is None:
+            # Naive -> assume UTC
+            return d.replace(tzinfo=dt.timezone.utc)
+        # Aware -> convert to UTC
+        return d.astimezone(dt.timezone.utc)
+
+    ts_utc = _ensure_utc(ts)
+    start_utc = _ensure_utc(start)
+    end_utc = _ensure_utc(end)
+
+    if start_utc is not None and ts_utc < start_utc:
         return False
-    if end is not None and ts > end:
+    if end_utc is not None and ts_utc > end_utc:
         return False
     return True
 
@@ -792,9 +841,56 @@ def _project_deployment(d: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-__all__ = [
-    "KubernetesCollector",
-    "MAX_K8S_OBJECTS",
-    "MAX_RESPONSE_BYTES",
-    "_INCIDENT_REASONS",
-]
+def _load_kubeconfig_token() -> Optional[str]:
+    """Load a bearer token from the kubeconfig of the current context.
+
+    Returns the token string if found, otherwise ``None``.
+    Supports ``users[].user.token`` and ``auth-provider`` ``access-token``.
+    """
+    # Determine kubeconfig path.
+    kubeconfig_path = os.getenv("KUBECONFIG") or str(Path.home() / ".kube" / "config")
+    try:
+        with open(kubeconfig_path, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except OSError:
+        return None
+    try:
+        cfg = yaml.safe_load(raw) if yaml else None
+    except Exception:
+        return None
+    if not isinstance(cfg, dict):
+        return None
+    current = cfg.get("current-context")
+    if not isinstance(current, str):
+        return None
+    # Find user name for the current context.
+    user_name = None
+    for ctx in cfg.get("contexts", []):
+        if not isinstance(ctx, dict):
+            continue
+        if ctx.get("name") == current:
+            user_name = ctx.get("context", {}).get("user")
+            break
+    if not isinstance(user_name, str):
+        return None
+    # Locate user entry.
+    for user in cfg.get("users", []):
+        if not isinstance(user, dict):
+            continue
+        if user.get("name") == user_name:
+            user_entry = user.get("user", {})
+            if not isinstance(user_entry, dict):
+                continue
+            # Direct token field.
+            token = user_entry.get("token")
+            if isinstance(token, str) and token:
+                return token
+            # auth-provider config access-token.
+            auth = user_entry.get("auth-provider", {})
+            if isinstance(auth, dict):
+                config = auth.get("config", {})
+                if isinstance(config, dict):
+                    access_token = config.get("access-token")
+                    if isinstance(access_token, str) and access_token:
+                        return access_token
+    return None

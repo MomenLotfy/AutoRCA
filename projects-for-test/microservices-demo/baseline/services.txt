@@ -1,0 +1,14 @@
+NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+adservice               ClusterIP      10.109.147.144   <none>        9555/TCP       52m     app=adservice
+cartservice             ClusterIP      10.96.162.207    <none>        7070/TCP       52m     app=cartservice
+checkoutservice         ClusterIP      10.100.208.236   <none>        5050/TCP       52m     app=checkoutservice
+currencyservice         ClusterIP      10.110.116.206   <none>        7000/TCP       52m     app=currencyservice
+emailservice            ClusterIP      10.98.230.76     <none>        5000/TCP       52m     app=emailservice
+frontend                ClusterIP      10.102.49.5      <none>        80/TCP         52m     app=frontend
+frontend-external       LoadBalancer   10.108.160.209   <pending>     80:32040/TCP   52m     app=frontend
+kubernetes              ClusterIP      10.96.0.1        <none>        443/TCP        3h28m   <none>
+paymentservice          ClusterIP      10.104.160.198   <none>        50051/TCP      52m     app=paymentservice
+productcatalogservice   ClusterIP      10.96.241.128    <none>        3550/TCP       52m     app=productcatalogservice
+recommendationservice   ClusterIP      10.99.96.178     <none>        8080/TCP       52m     app=recommendationservice
+redis-cart              ClusterIP      10.97.104.93     <none>        6379/TCP       52m     app=redis-cart
+shippingservice         ClusterIP      10.102.70.32     <none>        50051/TCP      52m     app=shippingservice

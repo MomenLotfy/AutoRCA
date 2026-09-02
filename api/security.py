@@ -5,7 +5,7 @@ import ipaddress
 import os
 import re
 from pathlib import Path, PurePath
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 from urllib.parse import urlparse
 
 
@@ -28,13 +28,24 @@ _SENSITIVE_VAR_NAMES = {
 }
 
 
-def allowed_workspace_root() -> Path:
-    """Returns the configured workspace root for incident repositories.
+def allowed_workspace_roots() -> List[Path]:
+    """Returns the configured workspace roots for incident repositories.
 
-    Restricted by ``AUTORCA_WORKSPACE_ROOT`` (default: ``./projects-for-test``).
+    Environment variables:
+    - ``AUTORCA_WORKSPACE_ROOTS``: colon‑separated list of allowed roots.
+    - ``AUTORCA_WORKSPACE_ROOT``: legacy single root (preserved for backward
+      compatibility).
+    If neither is set, defaults to ``./projects-for-test``.
     """
-    raw = os.environ.get("AUTORCA_WORKSPACE_ROOT", "projects-for-test")
-    return Path(raw).resolve()
+    raw = os.environ.get("AUTORCA_WORKSPACE_ROOTS")
+    if raw:
+        # split using OS path separator (":" on POSIX, ";" on Windows)
+        parts = [p for p in raw.split(os.pathsep) if p]
+    else:
+        # fallback to legacy single‑root variable
+        raw_single = os.environ.get("AUTORCA_WORKSPACE_ROOT", "projects-for-test")
+        parts = [raw_single]
+    return [Path(p).resolve() for p in parts]
 
 
 def resolve_repository_path(repo: str) -> Path:
@@ -55,17 +66,19 @@ def resolve_repository_path(repo: str) -> Path:
     # Reject obvious traversal attempts and shell injection markers.
     if "\x00" in repo:
         raise ValueError("invalid repository path")
-    workspace = allowed_workspace_root()
-    # Validate the *parent* of the candidate against the workspace — this
-    # accepts symlinks placed inside the workspace that point outside it.
+    workspace_roots = allowed_workspace_roots()
+    # Validate the *parent* of the candidate against any allowed workspace root.
+    # This accepts symlinks placed inside a workspace that point outside.
     parent = candidate.parent if candidate.parent != candidate else Path(".")
     try:
         parent_resolved = parent.resolve(strict=False)
-        parent_resolved.relative_to(workspace)
-    except ValueError:
+        if not any(parent_resolved.is_relative_to(root) for root in workspace_roots):
+            raise ValueError(
+                "repository path is outside the allowed workspace (" + ", ".join(str(r) for r in workspace_roots) + ")"
+            )
+    except Exception:
         raise ValueError(
-            "repository path is outside the allowed workspace "
-            f"({workspace}); arbitrary filesystem access is not permitted"
+            "repository path is outside the allowed workspace (" + ", ".join(str(r) for r in workspace_roots) + ")"
         )
     try:
         resolved = candidate.resolve(strict=False)
@@ -95,13 +108,16 @@ def validate_optional_path(name: str, value: Optional[str]) -> Optional[str]:
         resolved = candidate.resolve(strict=False)
     except OSError as exc:
         raise ValueError(f"{name} invalid path: {exc}") from exc
-    workspace = allowed_workspace_root()
+    workspace_roots = allowed_workspace_roots()
     try:
-        resolved.relative_to(workspace)
-    except ValueError as exc:
+        # Ensure the resolved path is within any allowed workspace root.
+        if not any(resolved.is_relative_to(root) for root in workspace_roots):
+            raise ValueError()
+    except Exception:
+        # Build a readable error with the list of allowed roots.
         raise ValueError(
-            f"{name} must be inside the allowed workspace ({workspace})"
-        ) from exc
+            f"{name} must be inside one of the allowed workspaces ({', '.join(str(r) for r in workspace_roots)})"
+        )
     return str(resolved)
 
 
@@ -203,7 +219,7 @@ def validate_integration_url(
         host = parsed.hostname
         try:
             ip = ipaddress.ip_address(host)
-        except ValueError:
+        except Exception:
             # Not a literal IP — we'd have to resolve DNS to decide,
             # which we deliberately avoid at the API boundary. We
             # therefore only block literal IP addresses; DNS-based

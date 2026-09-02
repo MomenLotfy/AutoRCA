@@ -124,16 +124,18 @@ class InvestigationService:
         # NOTE: Use the *provided* path string without following symlinks so that a
         # symlink placed inside the workspace is accepted even if it points outside.
         # -----------------------------------------------------------------
-        workspace_root = os.getenv("AUTORCA_WORKSPACE_ROOT", "").strip()
-        if not workspace_root:
-            raise AnalysisRequestError(
-                "AUTORCA_WORKSPACE_ROOT must be set for investigation creation."
-            )
-        workspace_root_path = Path(workspace_root).absolute()
+        # -----------------------------------------------------------------
+        # Workspace validation – the repository must be inside one of the allowed roots.
+        # NOTE: Use the *provided* path string without following symlinks so that a
+        # symlink placed inside the workspace is accepted even if it points outside.
+        # -----------------------------------------------------------------
+        from .security import allowed_workspace_roots
+        workspace_roots = allowed_workspace_roots()
         repo_abs = Path(repo_path).absolute()
-        if not str(repo_abs).startswith(str(workspace_root_path)):
+        # Ensure the repository path is inside any allowed workspace root.
+        if not any(str(repo_abs).startswith(str(root)) for root in workspace_roots):
             raise AnalysisRequestError(
-                "Repository path must be inside the workspace (AUTORCA_WORKSPACE_ROOT)."
+                "Repository path must be inside one of the allowed workspaces (AUTORCA_WORKSPACE_ROOT or AUTORCA_WORKSPACE_ROOTS)."
             )
         if not repo_abs.is_dir():
             raise AnalysisRequestError("Repository path does not exist or is not a directory.")
@@ -254,6 +256,45 @@ class InvestigationService:
                 # Store collector metadata to be merged into the investigation payload later.
                 collector_meta[collector_key] = result.metadata
 
+        # -----------------------------------------------------------------
+        # Kubernetes collector (Phase 2.3).
+        # -----------------------------------------------------------------
+        k8s_cfg = request.get("kubernetes")
+        if k8s_cfg:
+            endpoint = k8s_cfg.get("url") or k8s_cfg.get("endpoint")
+            if not endpoint:
+                raise AnalysisRequestError("kubernetes: missing endpoint URL")
+            parsed = urlparse(endpoint)
+            if parsed.scheme not in ("http", "https"):
+                raise AnalysisRequestError(f"kubernetes: unsupported URL scheme {parsed.scheme}")
+            resource = k8s_cfg.get("resource") or k8s_cfg.get("namespace")
+            extra_headers = k8s_cfg.get("extra_headers", {}) or {}
+            if any(k.lower() == "authorization" for k in extra_headers):
+                raise AnalysisRequestError("kubernetes: Authorization header not allowed")
+            config_kwargs = {
+                "source": "kubernetes",
+                "endpoint": endpoint,
+                "resource": resource,
+                "auth_env": k8s_cfg.get("auth_env"),
+                "auth_scheme": k8s_cfg.get("auth_scheme", "bearer"),
+                "verify_tls": k8s_cfg.get("verify_tls", True),
+                "extra_headers": extra_headers,
+                "incident_start": dt.datetime.fromisoformat(k8s_cfg.get("incident_start").replace('Z', '+00:00')) if isinstance(k8s_cfg.get("incident_start"), str) else k8s_cfg.get("incident_start"),
+                "incident_end": dt.datetime.fromisoformat(k8s_cfg.get("incident_end").replace('Z', '+00:00')) if isinstance(k8s_cfg.get("incident_end"), str) else k8s_cfg.get("incident_end"),
+            }
+            config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+            try:
+                from collectors.kubernetes_collector import KubernetesCollector
+                config = IntegrationConfig(**config_kwargs)
+                collector = KubernetesCollector(config)
+                result: IntegrationResult = collector.collect_with_metadata()
+            except Exception as exc:
+                raise AnalysisRequestError(f"kubernetes: {str(exc)}")
+            if result.items:
+                raw_content = "\n".join(getattr(item, "raw_text", "") for item in result.items)
+                sources["kubernetes"] = raw_content
+            if result.metadata:
+                collector_meta["kubernetes"] = result.metadata
         # -----------------------------------------------------------------
         # Resolve Git metadata.
         # -----------------------------------------------------------------

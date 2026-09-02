@@ -1,0 +1,13 @@
+NAME                                     READY   STATUS    RESTARTS      AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+adservice-686888998c-r7hx8               1/1     Running   2 (10m ago)   12m     10.244.0.32   minikube   <none>           <none>
+cartservice-7bdcb4d778-sj6tg             1/1     Running   1 (11m ago)   12m     10.244.0.33   minikube   <none>           <none>
+checkoutservice-7f5687d59d-m6jk2         1/1     Running   0             12m     10.244.0.34   minikube   <none>           <none>
+currencyservice-585bc4b96b-xhqwc         1/1     Running   0             12m     10.244.0.35   minikube   <none>           <none>
+emailservice-5bd948ddcd-5cnjj            1/1     Running   1 (11m ago)   12m     10.244.0.36   minikube   <none>           <none>
+frontend-54bbbbd749-5t7dd                1/1     Running   0             12m     10.244.0.37   minikube   <none>           <none>
+loadgenerator-868f944c96-mwk9m           1/1     Running   0             9m38s   10.244.0.43   minikube   <none>           <none>
+paymentservice-5596f7cddd-9bj8c          1/1     Running   0             12m     10.244.0.38   minikube   <none>           <none>
+productcatalogservice-7b46ffc9ff-qmck2   1/1     Running   0             12m     10.244.0.40   minikube   <none>           <none>
+recommendationservice-854cf66ff7-msf8v   1/1     Running   1 (11m ago)   12m     10.244.0.39   minikube   <none>           <none>
+redis-cart-f4bf8f94-xqh65                1/1     Running   0             12m     10.244.0.41   minikube   <none>           <none>
+shippingservice-748b8bbc5b-d8f6d         1/1     Running   0             12m     10.244.0.42   minikube   <none>           <none>
