@@ -176,3 +176,4 @@ autorca/
 - GitHub Actions API integration (استدعاء حي بدل ملفات محفوظة يدويًا)
 - Docker daemon / Kubernetes Collectors (لجلب logs مباشرة من بيئة التشغيل)
 - `models/*.py` — تمثيل Python كامل مطابق لـ schemas/*.json
+\n## Development Notes
